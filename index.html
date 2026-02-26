@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generator Planning Pekerjaan</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        label { display: block; margin-top: 10px; font-weight: bold; font-size: 14px;}
+        input, textarea { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        
+        button { width: 100%; padding: 10px; margin-top: 10px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold;}
+        .btn-add { background-color: #28a745; color: white; margin-top: 15px;}
+        .btn-save { background-color: #17a2b8; color: white; }
+        .btn-copy { background-color: #007bff; color: white; }
+        .btn-clear { background-color: #dc3545; color: white; }
+        
+        .item-box { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 5px; background: #fafafa; }
+        .item-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px; }
+        .item-header h3 { margin: 0; color: #333; font-size: 16px; }
+        .btn-delete { width: auto; padding: 5px 10px; margin: 0; background-color: #ff4d4d; color: white; font-size: 12px; }
+        
+        #output { white-space: pre-wrap; background: #e9ecef; padding: 15px; margin-top: 20px; border-radius: 4px; display: none; font-family: monospace; font-size: 13px; }
+        .header-section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #eee; }
+        .alat-group { display: flex; gap: 10px; }
+        .alat-group input { margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Input Planning Pekerjaan</h2>
+    
+    <div class="header-section">
+        <label>Tanggal Pekerjaan :</label>
+        <input type="date" id="tanggal">
+    </div>
+
+    <div id="form-container">
+        <div class="item-box">
+            <div class="item-header">
+                <h3 class="kegiatan-title">Kegiatan 1</h3>
+                <button class="btn-delete" onclick="removeItem(this)" style="display: none;">Hapus</button>
+            </div>
+
+            <label>Jenis Pekerjaan :</label>
+            <input type="text" class="jenis">
+            
+            <label>HA Plan :</label>
+            <input type="text" class="ha">
+            
+            <label>Lokasi Kerja :</label>
+            <input type="text" class="lokasi">
+            
+            <label>Jumlah HK :</label>
+            <input type="text" class="hk">
+            
+            <label>Bahan yang digunakan :</label>
+            <input type="text" class="bahan">
+            
+            <label>Alat yang digunakan :</label>
+            <input type="text" class="nama-alat" placeholder="Keterangan/Nama Alat (Cth: Excavator)">
+            <div class="alat-group">
+                <input type="text" placeholder="Bekerja (Cth: 2)" class="bekerja">
+                <input type="text" placeholder="Rusak (Cth: 0)" class="rusak">
+                <input type="text" placeholder="Standby (Cth: 1)" class="standby">
+            </div>
+            
+            <label>Penjelasan (Rusak/Standby) :</label>
+            <textarea class="ket" rows="2" placeholder="Berikan penjelasan singkat..."></textarea>
+        </div>
+    </div>
+
+    <button class="btn-add" onclick="addItem()">+ Tambah Kegiatan Lain</button>
+    <button class="btn-save" onclick="saveDraft()">💾 Simpan Draft</button>
+    <button class="btn-copy" onclick="generateAndCopy()">📋 Salin untuk WA</button>
+    <button class="btn-clear" onclick="resetForm()">🗑️ Hapus Total / Refresh</button>
+
+    <div id="output"></div>
+</div>
+
+<script>
+    // Fungsi untuk memperbarui penomoran kegiatan
+    function updateItemNumbers() {
+        const items = document.querySelectorAll('.item-box');
+        items.forEach((item, index) => {
+            item.querySelector('.kegiatan-title').innerText = `Kegiatan ${index + 1}`;
+            const deleteBtn = item.querySelector('.btn-delete');
+            deleteBtn.style.display = (index === 0) ? 'none' : 'block';
+        });
+    }
+
+    function addItem() {
+        const container = document.getElementById('form-container');
+        const newItem = document.querySelector('.item-box').cloneNode(true);
+        newItem.querySelectorAll('input, textarea').forEach(input => input.value = '');
+        container.appendChild(newItem);
+        updateItemNumbers();
+    }
+
+    function removeItem(btn) {
+        btn.closest('.item-box').remove();
+        updateItemNumbers();
+    }
+
+    function generateAndCopy() {
+        let items = document.querySelectorAll('.item-box');
+        let tanggalInput = document.getElementById('tanggal').value;
+        
+        let tanggalTeks = "-";
+        if(tanggalInput) {
+            let parts = tanggalInput.split('-');
+            tanggalTeks = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+
+        let fullText = "*PLANNING PEKERJAAN*\n";
+        fullText += `Tanggal : ${tanggalTeks}\n`;
+        fullText += "=".repeat(20) + "\n\n";
+
+        items.forEach((item, index) => {
+            fullText += `*Kegiatan ${index + 1}*\n`;
+            fullText += `Jenis Pekerjaan : ${item.querySelector('.jenis').value}\n`;
+            fullText += `HA Plan : ${item.querySelector('.ha').value}\n`;
+            fullText += `Lokasi Kerja : ${item.querySelector('.lokasi').value}\n`;
+            fullText += `Jumlah HK : ${item.querySelector('.hk').value}\n`;
+            fullText += `Bahan yang digunakan : ${item.querySelector('.bahan').value}\n`;
+            
+            let namaAlat = item.querySelector('.nama-alat').value;
+            fullText += `Jumlah Alat : ${namaAlat ? namaAlat : ''}\n`;
+            fullText += ` - Bekerja = ${item.querySelector('.bekerja').value}\n`;
+            fullText += ` - Rusak = ${item.querySelector('.rusak').value}\n`;
+            fullText += ` - Standby = ${item.querySelector('.standby').value}\n`;
+            fullText += `Ket: ${item.querySelector('.ket').value}\n\n`;
+            
+            if(index < items.length - 1) fullText += "-".repeat(15) + "\n\n";
+        });
+
+        const outputDiv = document.getElementById('output');
+        outputDiv.style.display = 'block';
+        outputDiv.innerText = fullText.trim();
+
+        navigator.clipboard.writeText(fullText.trim()).then(() => {
+            alert("Planning pekerjaan berhasil disalin! Silakan paste ke WhatsApp.");
+        }).catch(err => {
+            alert("Gagal menyalin secara otomatis. Silakan blok teks di bawah dan salin manual.");
+        });
+    }
+
+    // --- FITUR SAVE DRAFT ---
+    function saveDraft() {
+        const dataToSave = {
+            tanggal: document.getElementById('tanggal').value,
+            kegiatan: []
+        };
+
+        const items = document.querySelectorAll('.item-box');
+        items.forEach((item) => {
+            dataToSave.kegiatan.push({
+                jenis: item.querySelector('.jenis').value,
+                ha: item.querySelector('.ha').value,
+                lokasi: item.querySelector('.lokasi').value,
+                hk: item.querySelector('.hk').value,
+                bahan: item.querySelector('.bahan').value,
+                namaAlat: item.querySelector('.nama-alat').value,
+                bekerja: item.querySelector('.bekerja').value,
+                rusak: item.querySelector('.rusak').value,
+                standby: item.querySelector('.standby').value,
+                ket: item.querySelector('.ket').value
+            });
+        });
+
+        // Simpan ke memory browser
+        localStorage.setItem('draftLaporanKerja', JSON.stringify(dataToSave));
+        alert("Draft berhasil disimpan! Anda bisa menutup halaman dan membukanya lagi nanti tanpa kehilangan data.");
+    }
+
+    // --- FITUR MUAT DRAFT SAAT HALAMAN DIBUKA ---
+    function loadDraft() {
+        const savedDataJSON = localStorage.getItem('draftLaporanKerja');
+        if (savedDataJSON) {
+            const savedData = JSON.parse(savedDataJSON);
+            
+            // Isi tanggal
+            document.getElementById('tanggal').value = savedData.tanggal || '';
+
+            // Hapus form default, sisakan 1 saja
+            const container = document.getElementById('form-container');
+            container.innerHTML = ''; // Bersihkan container
+
+            // Template untuk form item
+            const itemTemplate = `
+                <div class="item-header">
+                    <h3 class="kegiatan-title">Kegiatan X</h3>
+                    <button class="btn-delete" onclick="removeItem(this)" style="display: none;">Hapus</button>
+                </div>
+                <label>Jenis Pekerjaan :</label><input type="text" class="jenis">
+                <label>HA Plan :</label><input type="text" class="ha">
+                <label>Lokasi Kerja :</label><input type="text" class="lokasi">
+                <label>Jumlah HK :</label><input type="text" class="hk">
+                <label>Bahan yang digunakan :</label><input type="text" class="bahan">
+                <label>Alat yang digunakan :</label><input type="text" class="nama-alat" placeholder="Keterangan/Nama Alat (Cth: Excavator)">
+                <div class="alat-group">
+                    <input type="text" placeholder="Bekerja (Cth: 2)" class="bekerja">
+                    <input type="text" placeholder="Rusak (Cth: 0)" class="rusak">
+                    <input type="text" placeholder="Standby (Cth: 1)" class="standby">
+                </div>
+                <label>Penjelasan (Rusak/Standby) :</label><textarea class="ket" rows="2" placeholder="Berikan penjelasan singkat..."></textarea>
+            `;
+
+            // Buat ulang form sesuai jumlah data yang tersimpan
+            savedData.kegiatan.forEach((kegiatanData, index) => {
+                const newItem = document.createElement('div');
+                newItem.className = 'item-box';
+                newItem.innerHTML = itemTemplate;
+                
+                newItem.querySelector('.jenis').value = kegiatanData.jenis;
+                newItem.querySelector('.ha').value = kegiatanData.ha;
+                newItem.querySelector('.lokasi').value = kegiatanData.lokasi;
+                newItem.querySelector('.hk').value = kegiatanData.hk;
+                newItem.querySelector('.bahan').value = kegiatanData.bahan;
+                newItem.querySelector('.nama-alat').value = kegiatanData.namaAlat;
+                newItem.querySelector('.bekerja').value = kegiatanData.bekerja;
+                newItem.querySelector('.rusak').value = kegiatanData.rusak;
+                newItem.querySelector('.standby').value = kegiatanData.standby;
+                newItem.querySelector('.ket').value = kegiatanData.ket;
+
+                container.appendChild(newItem);
+            });
+            updateItemNumbers();
+        }
+    }
+
+    function resetForm() {
+        let konfirmasi = confirm("Apakah Anda yakin ingin menghapus semua isian? Ini juga akan menghapus data yang tersimpan.");
+        if(konfirmasi) {
+            // Hapus dari memory
+            localStorage.removeItem('draftLaporanKerja');
+            
+            // Reload halaman untuk mereset semuanya ke awal
+            location.reload();
+        }
+    }
+
+    // Panggil fungsi saat halaman pertama dimuat
+    window.onload = function() {
+        loadDraft();
+        // Jika tidak ada draft yang termuat (container kosong), jalankan fungsi tambah item pertama
+        if(document.querySelectorAll('.item-box').length === 0) {
+            const container = document.getElementById('form-container');
+            const itemTemplate = `
+                <div class="item-box">
+                    <div class="item-header">
+                        <h3 class="kegiatan-title">Kegiatan 1</h3>
+                        <button class="btn-delete" onclick="removeItem(this)" style="display: none;">Hapus</button>
+                    </div>
+                    <label>Jenis Pekerjaan :</label><input type="text" class="jenis">
+                    <label>HA Plan :</label><input type="text" class="ha">
+                    <label>Lokasi Kerja :</label><input type="text" class="lokasi">
+                    <label>Jumlah HK :</label><input type="text" class="hk">
+                    <label>Bahan yang digunakan :</label><input type="text" class="bahan">
+                    <label>Alat yang digunakan :</label><input type="text" class="nama-alat" placeholder="Keterangan/Nama Alat (Cth: Excavator)">
+                    <div class="alat-group">
+                        <input type="text" placeholder="Bekerja (Cth: 2)" class="bekerja">
+                        <input type="text" placeholder="Rusak (Cth: 0)" class="rusak">
+                        <input type="text" placeholder="Standby (Cth: 1)" class="standby">
+                    </div>
+                    <label>Penjelasan (Rusak/Standby) :</label><textarea class="ket" rows="2" placeholder="Berikan penjelasan singkat..."></textarea>
+                </div>
+            `;
+            container.innerHTML = itemTemplate;
+        }
+        updateItemNumbers();
+    };
+</script>
+
+</body>
+</html>
+
