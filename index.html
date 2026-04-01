@@ -25,7 +25,7 @@
         .btn-up, .btn-down { background-color: #6c757d; }
         .btn-delete { background-color: #ff4d4d; }
         
-        #output { white-space: pre-wrap; background: #e9ecef; padding: 15px; margin-top: 20px; border-radius: 4px; display: none; font-family: monospace; font-size: 13px; }
+        #output { white-space: pre-wrap; background: #e9ecef; padding: 15px; margin-top: 20px; border-radius: 4px; display: none; font-family: monospace; font-size: 12px; border: 1px dashed #999; }
         .header-section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #eee; }
         .alat-group { display: flex; gap: 10px; }
         .alat-group input { margin-top: 5px; }
@@ -41,26 +41,24 @@
         <input type="date" id="tanggal">
     </div>
 
-    <div id="form-container">
-        </div>
+    <div id="form-container"></div>
 
     <button class="btn-add" onclick="addItem()">+ Tambah Kegiatan Lain</button>
-    <button class="btn-save" onclick="saveDraft()">💾 Simpan Draft</button>
-    <button class="btn-copy" onclick="generateAndCopy()">📋 Salin untuk WA</button>
+    <button class="btn-save" onclick="saveDraft()">💾 Simpan Draft di HP Ini</button>
+    <button class="btn-copy" onclick="generateAndCopy()">📋 Salin Laporan + Link Edit</button>
     <button class="btn-clear" onclick="resetForm()">🗑️ Hapus Total / Refresh</button>
 
     <div id="output"></div>
 </div>
 
 <script>
-    // Template HTML untuk setiap kegiatan
     const itemTemplateHTML = `
         <div class="item-header">
             <h3 class="kegiatan-title">Kegiatan X</h3>
             <div class="header-actions">
-                <button class="btn-action btn-up" onclick="moveUp(this)" title="Pindah ke Atas">⬆️</button>
-                <button class="btn-action btn-down" onclick="moveDown(this)" title="Pindah ke Bawah">⬇️</button>
-                <button class="btn-action btn-delete" onclick="removeItem(this)" title="Hapus Kegiatan">✖️</button>
+                <button class="btn-action btn-up" onclick="moveUp(this)" title="Atas">⬆️</button>
+                <button class="btn-action btn-down" onclick="moveDown(this)" title="Bawah">⬇️</button>
+                <button class="btn-action btn-delete" onclick="removeItem(this)" title="Hapus">✖️</button>
             </div>
         </div>
         <label>Jenis Pekerjaan :</label><input type="text" class="jenis">
@@ -68,33 +66,22 @@
         <label>Lokasi Kerja :</label><input type="text" class="lokasi">
         <label>Jumlah HK :</label><input type="text" class="hk">
         <label>Bahan yang digunakan :</label><input type="text" class="bahan">
-        <label>Alat yang digunakan :</label><input type="text" class="nama-alat" placeholder="Keterangan/Nama Alat (Cth: Excavator)">
+        <label>Alat yang digunakan :</label><input type="text" class="nama-alat" placeholder="Nama Alat">
         <div class="alat-group">
-            <input type="text" placeholder="Bekerja (Cth: 2)" class="bekerja">
-            <input type="text" placeholder="Rusak (Cth: 0)" class="rusak">
-            <input type="text" placeholder="Standby (Cth: 1)" class="standby">
+            <input type="text" placeholder="Bekerja" class="bekerja">
+            <input type="text" placeholder="Rusak" class="rusak">
+            <input type="text" placeholder="Standby" class="standby">
         </div>
-        <label>Penjelasan (Rusak/Standby) :</label><textarea class="ket" rows="2" placeholder="Berikan penjelasan singkat..."></textarea>
+        <label>Penjelasan (Rusak/Standby) :</label><textarea class="ket" rows="2" placeholder="Penjelasan..."></textarea>
     `;
 
-    // Fungsi untuk memperbarui penomoran kegiatan dan visibilitas tombol
     function updateItemNumbers() {
         const items = document.querySelectorAll('.item-box');
         items.forEach((item, index) => {
-            // Update Nomor
             item.querySelector('.kegiatan-title').innerText = `Kegiatan ${index + 1}`;
-            
-            // Atur tombol hapus (jangan hapus jika sisa 1)
-            const deleteBtn = item.querySelector('.btn-delete');
-            deleteBtn.style.display = (items.length <= 1) ? 'none' : 'block';
-
-            // Atur tombol Naik (sembunyikan di urutan paling atas)
-            const upBtn = item.querySelector('.btn-up');
-            upBtn.style.display = (index === 0) ? 'none' : 'block';
-
-            // Atur tombol Turun (sembunyikan di urutan paling bawah)
-            const downBtn = item.querySelector('.btn-down');
-            downBtn.style.display = (index === items.length - 1) ? 'none' : 'block';
+            item.querySelector('.btn-delete').style.display = (items.length <= 1) ? 'none' : 'block';
+            item.querySelector('.btn-up').style.display = (index === 0) ? 'none' : 'block';
+            item.querySelector('.btn-down').style.display = (index === items.length - 1) ? 'none' : 'block';
         });
     }
 
@@ -112,30 +99,54 @@
         updateItemNumbers();
     }
 
-    // --- FITUR PINDAH URUTAN ---
     function moveUp(btn) {
         const currentItem = btn.closest('.item-box');
-        const previousItem = currentItem.previousElementSibling;
-        if (previousItem) {
-            currentItem.parentNode.insertBefore(currentItem, previousItem);
-            updateItemNumbers();
-        }
+        const prev = currentItem.previousElementSibling;
+        if (prev) { currentItem.parentNode.insertBefore(currentItem, prev); updateItemNumbers(); }
     }
 
     function moveDown(btn) {
         const currentItem = btn.closest('.item-box');
-        const nextItem = currentItem.nextElementSibling;
-        if (nextItem) {
-            // Insert sebelum elemen setelah nextItem (efektif menukar posisi)
-            currentItem.parentNode.insertBefore(nextItem, currentItem);
-            updateItemNumbers();
-        }
+        const next = currentItem.nextElementSibling;
+        if (next) { currentItem.parentNode.insertBefore(next, currentItem); updateItemNumbers(); }
     }
 
+    function getFormData() {
+        const data = { tanggal: document.getElementById('tanggal').value, kegiatan: [] };
+        document.querySelectorAll('.item-box').forEach((item) => {
+            data.kegiatan.push({
+                jenis: item.querySelector('.jenis').value, ha: item.querySelector('.ha').value,
+                lokasi: item.querySelector('.lokasi').value, hk: item.querySelector('.hk').value,
+                bahan: item.querySelector('.bahan').value, namaAlat: item.querySelector('.nama-alat').value,
+                bekerja: item.querySelector('.bekerja').value, rusak: item.querySelector('.rusak').value,
+                standby: item.querySelector('.standby').value, ket: item.querySelector('.ket').value
+            });
+        });
+        return data;
+    }
+
+    function populateForm(savedData) {
+        const container = document.getElementById('form-container');
+        container.innerHTML = '';
+        document.getElementById('tanggal').value = savedData.tanggal || '';
+        savedData.kegiatan.forEach((kegiatanData) => {
+            const newItem = document.createElement('div');
+            newItem.className = 'item-box';
+            newItem.innerHTML = itemTemplateHTML;
+            Object.keys(kegiatanData).forEach(key => {
+                const selector = key === 'namaAlat' ? '.nama-alat' : `.${key}`;
+                const el = newItem.querySelector(selector);
+                if(el) el.value = kegiatanData[key];
+            });
+            container.appendChild(newItem);
+        });
+        updateItemNumbers();
+    }
+
+    // FUNGSI UTAMA: GENERATE TEKS + LINK SHARE
     function generateAndCopy() {
-        let items = document.querySelectorAll('.item-box');
-        let tanggalInput = document.getElementById('tanggal').value;
-        
+        const data = getFormData();
+        let tanggalInput = data.tanggal;
         let tanggalTeks = "-";
         if(tanggalInput) {
             let parts = tanggalInput.split('-');
@@ -146,109 +157,62 @@
         fullText += `Tanggal : ${tanggalTeks}\n`;
         fullText += "=".repeat(20) + "\n\n";
 
-        items.forEach((item, index) => {
+        data.kegiatan.forEach((k, index) => {
             fullText += `*Kegiatan ${index + 1}*\n`;
-            fullText += `Jenis Pekerjaan : ${item.querySelector('.jenis').value}\n`;
-            fullText += `HA Plan : ${item.querySelector('.ha').value}\n`;
-            fullText += `Lokasi Kerja : ${item.querySelector('.lokasi').value}\n`;
-            fullText += `Jumlah HK : ${item.querySelector('.hk').value}\n`;
-            fullText += `Bahan yang digunakan : ${item.querySelector('.bahan').value}\n`;
-            
-            let namaAlat = item.querySelector('.nama-alat').value;
-            fullText += `Jumlah Alat : ${namaAlat ? namaAlat : ''}\n`;
-            fullText += ` - Bekerja = ${item.querySelector('.bekerja').value}\n`;
-            fullText += ` - Rusak = ${item.querySelector('.rusak').value}\n`;
-            fullText += ` - Standby = ${item.querySelector('.standby').value}\n`;
-            fullText += `Ket: ${item.querySelector('.ket').value}\n\n`;
-            
-            if(index < items.length - 1) fullText += "-".repeat(15) + "\n\n";
+            fullText += `Jenis Pekerjaan : ${k.jenis}\n`;
+            fullText += `HA Plan : ${k.ha}\n`;
+            fullText += `Lokasi Kerja : ${k.lokasi}\n`;
+            fullText += `Jumlah HK : ${k.hk}\n`;
+            fullText += `Bahan yang digunakan : ${k.bahan}\n`;
+            fullText += `Jumlah Alat : ${k.namaAlat}\n`;
+            fullText += ` - Bekerja = ${k.bekerja}\n - Rusak = ${k.rusak}\n - Standby = ${k.standby}\n`;
+            fullText += `Ket: ${k.ket}\n\n`;
+            if(index < data.kegiatan.length - 1) fullText += "-".repeat(15) + "\n\n";
         });
+
+        // Membuat Link Share
+        const jsonString = JSON.stringify(data);
+        const encodedData = btoa(unescape(encodeURIComponent(jsonString)));
+        const baseUrl = window.location.origin + window.location.pathname;
+        const shareLink = baseUrl + "?data=" + encodedData;
+
+        // Tambahkan Link ke teks WA
+        fullText += "=".repeat(20) + "\n";
+        fullText += "*Link Edit/Lihat di Web:*\n" + shareLink;
 
         const outputDiv = document.getElementById('output');
         outputDiv.style.display = 'block';
         outputDiv.innerText = fullText.trim();
 
         navigator.clipboard.writeText(fullText.trim()).then(() => {
-            alert("Planning pekerjaan berhasil disalin! Silakan paste ke WhatsApp.");
-        }).catch(err => {
-            alert("Gagal menyalin secara otomatis. Silakan blok teks di bawah dan salin manual.");
+            alert("Laporan & Link Edit berhasil disalin ke WhatsApp!");
         });
     }
 
     function saveDraft() {
-        const dataToSave = {
-            tanggal: document.getElementById('tanggal').value,
-            kegiatan: []
-        };
-
-        const items = document.querySelectorAll('.item-box');
-        items.forEach((item) => {
-            dataToSave.kegiatan.push({
-                jenis: item.querySelector('.jenis').value,
-                ha: item.querySelector('.ha').value,
-                lokasi: item.querySelector('.lokasi').value,
-                hk: item.querySelector('.hk').value,
-                bahan: item.querySelector('.bahan').value,
-                namaAlat: item.querySelector('.nama-alat').value,
-                bekerja: item.querySelector('.bekerja').value,
-                rusak: item.querySelector('.rusak').value,
-                standby: item.querySelector('.standby').value,
-                ket: item.querySelector('.ket').value
-            });
-        });
-
-        localStorage.setItem('draftLaporanKerja', JSON.stringify(dataToSave));
-        alert("Draft berhasil disimpan! Anda bisa menutup halaman dan membukanya lagi nanti tanpa kehilangan data.");
+        localStorage.setItem('draftLaporanKerja', JSON.stringify(getFormData()));
+        alert("Draft tersimpan di HP ini!");
     }
 
-    function loadDraft() {
-        const savedDataJSON = localStorage.getItem('draftLaporanKerja');
-        const container = document.getElementById('form-container');
-        container.innerHTML = ''; // Bersihkan container
-
-        if (savedDataJSON) {
-            const savedData = JSON.parse(savedDataJSON);
-            document.getElementById('tanggal').value = savedData.tanggal || '';
-
-            savedData.kegiatan.forEach((kegiatanData) => {
-                const newItem = document.createElement('div');
-                newItem.className = 'item-box';
-                newItem.innerHTML = itemTemplateHTML;
-                
-                newItem.querySelector('.jenis').value = kegiatanData.jenis;
-                newItem.querySelector('.ha').value = kegiatanData.ha;
-                newItem.querySelector('.lokasi').value = kegiatanData.lokasi;
-                newItem.querySelector('.hk').value = kegiatanData.hk;
-                newItem.querySelector('.bahan').value = kegiatanData.bahan;
-                newItem.querySelector('.nama-alat').value = kegiatanData.namaAlat;
-                newItem.querySelector('.bekerja').value = kegiatanData.bekerja;
-                newItem.querySelector('.rusak').value = kegiatanData.rusak;
-                newItem.querySelector('.standby').value = kegiatanData.standby;
-                newItem.querySelector('.ket').value = kegiatanData.ket;
-
-                container.appendChild(newItem);
-            });
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const sharedData = urlParams.get('data');
+        if (sharedData) {
+            try {
+                const decoded = JSON.parse(decodeURIComponent(escape(atob(sharedData))));
+                populateForm(decoded);
+                window.history.replaceState({}, document.title, window.location.pathname);
+                alert("Data dari link berhasil dimuat!");
+                return;
+            } catch (e) { alert("Link tidak valid."); }
         }
-
-        // Jika tidak ada data tersimpan, buat 1 form kosong
-        if(document.querySelectorAll('.item-box').length === 0) {
-            addItem();
-        } else {
-            updateItemNumbers();
-        }
-    }
+        const saved = localStorage.getItem('draftLaporanKerja');
+        if (saved) { populateForm(JSON.parse(saved)); } else { addItem(); }
+    };
 
     function resetForm() {
-        let konfirmasi = confirm("Apakah Anda yakin ingin menghapus semua isian? Ini juga akan menghapus data yang tersimpan.");
-        if(konfirmasi) {
-            localStorage.removeItem('draftLaporanKerja');
-            location.reload();
-        }
+        if(confirm("Hapus semua?")) { localStorage.removeItem('draftLaporanKerja'); window.location.href = window.location.origin + window.location.pathname; }
     }
-
-    // Panggil fungsi saat halaman pertama dimuat
-    window.onload = loadDraft;
 </script>
-
 </body>
 </html>
