@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoring Upkeep & Manuring v7</title>
+    <title>Monitoring Upkeep & Manuring v8</title>
     <style>
         :root { --primary: #1a73e8; --secondary: #28a745; --danger: #dc3545; }
         body { font-family: 'Segoe UI', sans-serif; padding: 15px; background-color: #f0f2f5; margin: 0; }
@@ -34,7 +34,6 @@
         .btn-csv { background: #6c757d; }
         .btn-wa { background: #25d366; }
         .btn-reset { background: var(--danger); margin-top: 25px; font-size: 12px; opacity: 0.9; }
-        .btn-main:active { transform: scale(0.98); }
         
         .hidden { display: none; }
     </style>
@@ -43,7 +42,7 @@
 
 <div class="container">
     <h2 style="text-align:center; font-size:18px; color:#333; margin-top:0;">UPKEEP & MANURING SYSTEM</h2>
-    <div id="status" class="status-bar">Mencoba Sinkronisasi...</div>
+    <div id="status" class="status-bar">Sinkronisasi Data...</div>
 
     <div class="tabs">
         <button id="btn-tab-plan" class="tab-btn active" onclick="switchTab('plan')">PLANNING</button>
@@ -68,7 +67,6 @@
     <button class="btn-main btn-save" id="saveBtn" onclick="saveToCloud()">☁️ SIMPAN & UPDATE CLOUD</button>
     <button id="waBtn" class="btn-main btn-wa" onclick="copyToWA()">📋 SALIN WA (PLANNING)</button>
     <button class="btn-main btn-csv" onclick="downloadSeparateCSV()">📥 DOWNLOAD CSV (PLAN & AKTUAL)</button>
-    
     <button class="btn-main btn-reset" onclick="resetForm()">🗑️ HAPUS TOTAL / RESET FORM</button>
 </div>
 
@@ -208,6 +206,7 @@
         }
     }
 
+    // --- FITUR SALIN WA DENGAN LINK KEMBALI ---
     function copyToWA() {
         const tglInput = document.getElementById('tanggal').value;
         const tgl = tglInput ? tglInput.split('-').reverse().join('/') : '-';
@@ -222,8 +221,15 @@
             msg += `*${i+1}. ${j.jenis.toUpperCase() || '-'}*\n📍 Lokasi: ${j.lokasi || '-'} (${j.ha || 0} HA)\n👷 Tenaga: ${j.hk || 0} HK\n📦 Bahan: ${j.bahan || '-'}\n🚜 Alat: ${j.alat || '-'}\n   (Bekerja: ${j.b}, Rusak: ${j.r}, Standby: ${j.s})\n📝 Ket: ${j.ket || '-'}\n\n`;
         });
         
-        msg += `${"=".repeat(20)}\n*TOTAL TENAGA KERJA: ${totalHK} HK*`;
-        navigator.clipboard.writeText(msg).then(() => alert(`Laporan ${currentMode.toUpperCase()} Disalin!`));
+        msg += `${"=".repeat(20)}\n`;
+        msg += `*TOTAL TENAGA KERJA: ${totalHK} HK*\n\n`;
+        
+        // MENAMBAHKAN KEMBALI LINK EDIT ONLINE
+        msg += `*Link Edit Online:* \n${window.location.href}`;
+
+        navigator.clipboard.writeText(msg).then(() => {
+            alert(`Laporan ${currentMode.toUpperCase()} & Link Berhasil Disalin!`);
+        });
     }
 
     function downloadSeparateCSV() {
@@ -246,15 +252,13 @@
         setTimeout(() => { downloadFile(generateCSV('aktual'), `AKTUAL_${tgl}.csv`); }, 500);
     }
 
-    // FUNGSI RESET DIKEMBALIKAN
     function resetForm() {
-        if(confirm("Peringatan! Ini akan menghapus SEMUA isian Planning dan Aktual di layar Anda. Lanjutkan?")) {
+        if(confirm("Hapus semua isian di layar? (Data di Cloud tidak akan hilang sebelum Anda tekan Simpan)")) {
             document.getElementById('container-plan').innerHTML = "";
             document.getElementById('container-aktual').innerHTML = "";
             document.getElementById('tanggal').value = "";
             addItem('plan');
             addItem('aktual');
-            alert("Formulir berhasil dikosongkan.");
         }
     }
 
