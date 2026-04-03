@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoring Upkeep & Manuring v6</title>
+    <title>Monitoring Upkeep & Manuring v7</title>
     <style>
         :root { --primary: #1a73e8; --secondary: #28a745; --danger: #dc3545; }
         body { font-family: 'Segoe UI', sans-serif; padding: 15px; background-color: #f0f2f5; margin: 0; }
@@ -33,6 +33,7 @@
         .btn-save { background: var(--primary); }
         .btn-csv { background: #6c757d; }
         .btn-wa { background: #25d366; }
+        .btn-reset { background: var(--danger); margin-top: 25px; font-size: 12px; opacity: 0.9; }
         .btn-main:active { transform: scale(0.98); }
         
         .hidden { display: none; }
@@ -66,13 +67,15 @@
     
     <button class="btn-main btn-save" id="saveBtn" onclick="saveToCloud()">☁️ SIMPAN & UPDATE CLOUD</button>
     <button id="waBtn" class="btn-main btn-wa" onclick="copyToWA()">📋 SALIN WA (PLANNING)</button>
-    <button class="btn-main btn-csv" onclick="downloadSeparateCSV()">📥 DOWNLOAD CSV (PLAN & AKTUAL TERPISAH)</button>
+    <button class="btn-main btn-csv" onclick="downloadSeparateCSV()">📥 DOWNLOAD CSV (PLAN & AKTUAL)</button>
+    
+    <button class="btn-main btn-reset" onclick="resetForm()">🗑️ HAPUS TOTAL / RESET FORM</button>
 </div>
 
 <script>
     // --- KONFIGURASI JSONBIN ---
-    const BIN_ID = "69cf19e6aaba882197bd57e3"; 
-    const API_KEY = "$2a$10$/ggPELqckAHy5/mV.eJTr.sMUQIdq6zdRK5JVKfOB09rOgb9tr/u6"; 
+    const BIN_ID = "MASUKKAN_BIN_ID_ANDA"; 
+    const API_KEY = "MASUKKAN_X_MASTER_KEY_ANDA"; 
     const URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
     let currentMode = 'plan';
@@ -223,10 +226,8 @@
         navigator.clipboard.writeText(msg).then(() => alert(`Laporan ${currentMode.toUpperCase()} Disalin!`));
     }
 
-    // --- FUNGSI DOWNLOAD TERPISAH ---
     function downloadSeparateCSV() {
         const tgl = document.getElementById('tanggal').value || 'laporan';
-        
         const generateCSV = (type) => {
             let csv = "NO,JENIS PEKERJAAN,LUAS (HA),LOKASI/BLOK,TENAGA (HK),BAHAN,ALAT,BEKERJA,RUSAK,STANDBY,KETERANGAN\n";
             collectData(type).forEach((j, i) => {
@@ -234,7 +235,6 @@
             });
             return csv;
         };
-
         const downloadFile = (content, filename) => {
             const blob = new Blob([content], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
@@ -242,14 +242,20 @@
             a.href = url; a.download = filename; a.click();
             window.URL.revokeObjectURL(url);
         };
-
-        // Download Planning
         downloadFile(generateCSV('plan'), `PLAN_${tgl}.csv`);
-        
-        // Jeda sebentar agar browser tidak memblokir download ganda
-        setTimeout(() => {
-            downloadFile(generateCSV('aktual'), `AKTUAL_${tgl}.csv`);
-        }, 500);
+        setTimeout(() => { downloadFile(generateCSV('aktual'), `AKTUAL_${tgl}.csv`); }, 500);
+    }
+
+    // FUNGSI RESET DIKEMBALIKAN
+    function resetForm() {
+        if(confirm("Peringatan! Ini akan menghapus SEMUA isian Planning dan Aktual di layar Anda. Lanjutkan?")) {
+            document.getElementById('container-plan').innerHTML = "";
+            document.getElementById('container-aktual').innerHTML = "";
+            document.getElementById('tanggal').value = "";
+            addItem('plan');
+            addItem('aktual');
+            alert("Formulir berhasil dikosongkan.");
+        }
     }
 
     window.onload = loadCloud;
