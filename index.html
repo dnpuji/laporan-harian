@@ -36,7 +36,7 @@
 
 <script>
     // MASUKKAN URL DARI GOOGLE APPS SCRIPT DI SINI
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzh1FpZssROLkByxdBE1Q8fSZcX7Y3MsKBUn3zj9z6EJjtOHypexjdOyaAHywIFiq8vnQ/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzpmSwauh8LL8SdyQVrQSmz7-ZH7EvimMaY_sOfvITbcr5DtQhVrFYuadLlK41gR2fFzQ/exec";
 
     const itemTemplate = `
         <div class="header-actions">
@@ -74,33 +74,52 @@
     function removeItem(btn) { btn.closest('.item-box').remove(); updateItemNumbers(); }
 
     // AMBIL DATA DARI CLOUD SAAT DIBUKA
-    async function loadFromCloud() {
-        try {
-            const response = await fetch(SCRIPT_URL);
-            const data = await response.json();
-            if (data) {
-                document.getElementById('tanggal').value = data.tanggal;
-                const container = document.getElementById('form-container');
-                container.innerHTML = '';
-                data.kegiatan.forEach(k => {
-                    addItem();
-                    const lastItem = container.lastElementChild;
-                    lastItem.querySelector('.jenis').value = k.jenis;
-                    lastItem.querySelector('.ha').value = k.ha;
-                    lastItem.querySelector('.lokasi').value = k.lokasi;
-                    lastItem.querySelector('.hk').value = k.hk;
-                    lastItem.querySelector('.bahan').value = k.bahan;
-                    lastItem.querySelector('.nama-alat').value = k.namaAlat;
-                    lastItem.querySelector('.bekerja').value = k.bekerja;
-                    lastItem.querySelector('.rusak').value = k.rusak;
-                    lastItem.querySelector('.standby').value = k.standby;
-                    lastItem.querySelector('.ket').value = k.ket;
-                });
-                document.getElementById('status').innerText = "Data tersinkronisasi ✅";
-            }
-        } catch (e) { document.getElementById('status').innerText = "Gagal memuat data."; addItem(); }
-    }
+    async function saveToCloud() {
+    const saveBtn = document.getElementById('saveBtn');
+    const status = document.getElementById('status');
+    
+    saveBtn.disabled = true;
+    saveBtn.innerText = "⏳ Sedang Menyimpan...";
+    
+    const data = {
+        tanggal: document.getElementById('tanggal').value,
+        kegiatan: Array.from(document.querySelectorAll('.item-box')).map(item => ({
+            jenis: item.querySelector('.jenis').value,
+            ha: item.querySelector('.ha').value,
+            lokasi: item.querySelector('.lokasi').value,
+            hk: item.querySelector('.hk').value,
+            bahan: item.querySelector('.bahan').value,
+            namaAlat: item.querySelector('.nama-alat').value,
+            bekerja: item.querySelector('.bekerja').value,
+            rusak: item.querySelector('.rusak').value,
+            standby: item.querySelector('.standby').value,
+            ket: item.querySelector('.ket').value
+        }))
+    };
 
+    try {
+        // Menggunakan fetch dengan metode yang lebih kompatibel
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors', // Menghindari masalah kebijakan keamanan browser
+            cache: 'no-cache',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        // Karena menggunakan 'no-cors', kita tidak bisa membaca isi response, 
+        // tapi jika tidak masuk ke blok 'catch', berarti data terkirim.
+        alert("Perintah simpan telah dikirim ke Cloud!");
+        status.innerText = "Data diperbarui ✅";
+    } catch (e) {
+        console.error(e);
+        alert("Gagal terhubung ke server. Pastikan URL Script benar.");
+        status.innerText = "Gagal simpan ❌";
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerText = "☁️ Simpan & Update Semua Orang";
+    }
+}
     // SIMPAN KE CLOUD
     async function saveToCloud() {
         const saveBtn = document.getElementById('saveBtn');
