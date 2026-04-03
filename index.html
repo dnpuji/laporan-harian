@@ -5,162 +5,168 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Planning Pekerjaan Sync</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; }
-        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        label { display: block; margin-top: 10px; font-weight: bold; font-size: 14px;}
-        input, textarea { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; margin-top: 10px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold;}
-        .btn-add { background-color: #28a745; color: white; }
-        .btn-save { background-color: #007bff; color: white; }
-        .btn-copy { background-color: #6c757d; color: white; }
-        .item-box { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 5px; background: #fafafa; }
-        .header-actions { display: flex; gap: 5px; float: right; }
-        #status { text-align: center; font-size: 12px; color: #666; margin-bottom: 10px; }
+        body { font-family: sans-serif; padding: 15px; background-color: #f4f4f9; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #1a73e8; font-size: 18px; border-bottom: 2px solid #1a73e8; padding-bottom: 10px; }
+        label { display: block; margin-top: 10px; font-weight: bold; font-size: 13px; }
+        input, textarea { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        .status-bar { text-align: center; font-size: 11px; margin-bottom: 15px; padding: 5px; border-radius: 4px; background: #eee; }
+        
+        .btn-main { width: 100%; padding: 12px; margin-top: 10px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .btn-add { background: #28a745; color: white; }
+        .btn-save { background: #1a73e8; color: white; }
+        .btn-copy { background: #6c757d; color: white; }
+        
+        .item-box { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 8px; background: #fff; position: relative; }
+        .item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .alat-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 5px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h2>Planning Pekerjaan</h2>
-    <div id="status">Memuat data terbaru...</div>
+    <div id="status" class="status-bar">Menghubungkan ke Cloud...</div>
     
-    <label>Tanggal Pekerjaan :</label>
+    <label>Tanggal :</label>
     <input type="date" id="tanggal">
 
     <div id="form-container"></div>
 
-    <button class="btn-add" onclick="addItem()">+ Tambah Kegiatan</button>
-    <button class="btn-save" id="saveBtn" onclick="saveToCloud()">☁️ Simpan & Update Semua Orang</button>
-    <button class="btn-copy" onclick="generateAndCopyWA()">📋 Salin Laporan ke WA</button>
+    <button class="btn-main btn-add" onclick="addItem()">+ Tambah Kegiatan</button>
+    <button class="btn-main btn-save" id="saveBtn" onclick="saveToCloud()">☁️ Simpan & Update Semua Orang</button>
+    <button class="btn-main btn-copy" onclick="copyToWA()">📋 Salin Teks ke WA</button>
 </div>
 
 <script>
-    // MASUKKAN URL DARI GOOGLE APPS SCRIPT DI SINI
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzpmSwauh8LL8SdyQVrQSmz7-ZH7EvimMaY_sOfvITbcr5DtQhVrFYuadLlK41gR2fFzQ/exec";
+    // --- KONFIGURASI JSONBIN ---
+    const BIN_ID = "MASUKKAN_BIN_ID_ANDA_DISINI"; 
+    const API_KEY = "$2a$10$MASUKKAN_MASTER_KEY_ANDA_DISINI"; 
+    const URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
-    const itemTemplate = `
-        <div class="header-actions">
-            <button onclick="removeItem(this)">✖️</button>
+    const itemHTML = `
+        <div class="item-header">
+            <strong class="title">Kegiatan</strong>
+            <button onclick="this.closest('.item-box').remove()" style="color:red; border:none; background:none; cursor:pointer">✕ Hapus</button>
         </div>
-        <h3 class="kegiatan-title">Kegiatan</h3>
-        <label>Jenis Pekerjaan :</label><input type="text" class="jenis">
-        <label>HA Plan :</label><input type="text" class="ha">
-        <label>Lokasi Kerja :</label><input type="text" class="lokasi">
-        <label>Jumlah HK :</label><input type="text" class="hk">
-        <label>Bahan :</label><input type="text" class="bahan">
-        <label>Alat :</label><input type="text" class="nama-alat">
-        <div style="display:flex; gap:5px">
-            <input type="text" placeholder="Bekerja" class="bekerja">
-            <input type="text" placeholder="Rusak" class="rusak">
-            <input type="text" placeholder="Standby" class="standby">
+        <input type="text" class="jenis" placeholder="Jenis Pekerjaan">
+        <div style="display:flex; gap:5px; margin-top:5px">
+            <input type="text" class="ha" placeholder="HA Plan">
+            <input type="text" class="lokasi" placeholder="Lokasi">
         </div>
-        <textarea class="ket" rows="2" placeholder="Keterangan..."></textarea>
+        <input type="text" class="hk" placeholder="Jumlah HK" style="margin-top:5px">
+        <label style="font-size:11px">Alat & Status (B/R/S):</label>
+        <input type="text" class="nama-alat" placeholder="Nama Alat">
+        <div class="alat-row">
+            <input type="text" class="bekerja" placeholder="B">
+            <input type="text" class="rusak" placeholder="R">
+            <input type="text" class="standby" placeholder="S">
+        </div>
+        <textarea class="ket" rows="2" placeholder="Keterangan..." style="margin-top:5px"></textarea>
     `;
-
-    function updateItemNumbers() {
-        document.querySelectorAll('.item-box').forEach((item, i) => {
-            item.querySelector('.kegiatan-title').innerText = `Kegiatan ${i + 1}`;
-        });
-    }
 
     function addItem() {
         const div = document.createElement('div');
         div.className = 'item-box';
-        div.innerHTML = itemTemplate;
+        div.innerHTML = itemHTML;
         document.getElementById('form-container').appendChild(div);
-        updateItemNumbers();
     }
 
-    function removeItem(btn) { btn.closest('.item-box').remove(); updateItemNumbers(); }
-
-    // AMBIL DATA DARI CLOUD SAAT DIBUKA
-    async function saveToCloud() {
-    const saveBtn = document.getElementById('saveBtn');
-    const status = document.getElementById('status');
-    
-    saveBtn.disabled = true;
-    saveBtn.innerText = "⏳ Sedang Menyimpan...";
-    
-    const data = {
-        tanggal: document.getElementById('tanggal').value,
-        kegiatan: Array.from(document.querySelectorAll('.item-box')).map(item => ({
-            jenis: item.querySelector('.jenis').value,
-            ha: item.querySelector('.ha').value,
-            lokasi: item.querySelector('.lokasi').value,
-            hk: item.querySelector('.hk').value,
-            bahan: item.querySelector('.bahan').value,
-            namaAlat: item.querySelector('.nama-alat').value,
-            bekerja: item.querySelector('.bekerja').value,
-            rusak: item.querySelector('.rusak').value,
-            standby: item.querySelector('.standby').value,
-            ket: item.querySelector('.ket').value
-        }))
-    };
-
-    try {
-        // Menggunakan fetch dengan metode yang lebih kompatibel
-        const response = await fetch(SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors', // Menghindari masalah kebijakan keamanan browser
-            cache: 'no-cache',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-
-        // Karena menggunakan 'no-cors', kita tidak bisa membaca isi response, 
-        // tapi jika tidak masuk ke blok 'catch', berarti data terkirim.
-        alert("Perintah simpan telah dikirim ke Cloud!");
-        status.innerText = "Data diperbarui ✅";
-    } catch (e) {
-        console.error(e);
-        alert("Gagal terhubung ke server. Pastikan URL Script benar.");
-        status.innerText = "Gagal simpan ❌";
-    } finally {
-        saveBtn.disabled = false;
-        saveBtn.innerText = "☁️ Simpan & Update Semua Orang";
+    // FUNGSI MUAT DATA DARI CLOUD
+    async function loadFromCloud() {
+        const status = document.getElementById('status');
+        try {
+            const res = await fetch(URL, { headers: { "X-Master-Key": API_KEY } });
+            const result = await res.json();
+            const data = result.record;
+            
+            if (data && data.jobs) {
+                document.getElementById('tanggal').value = data.tgl || "";
+                document.getElementById('form-container').innerHTML = "";
+                data.jobs.forEach(j => {
+                    addItem();
+                    const last = document.getElementById('form-container').lastElementChild;
+                    last.querySelector('.jenis').value = j.j;
+                    last.querySelector('.ha').value = j.h;
+                    last.querySelector('.lokasi').value = j.l;
+                    last.querySelector('.hk').value = j.k;
+                    last.querySelector('.nama-alat').value = j.a;
+                    last.querySelector('.bekerja').value = j.b;
+                    last.querySelector('.rusak').value = j.r;
+                    last.querySelector('.standby').value = j.s;
+                    last.querySelector('.ket').value = j.txt;
+                });
+                status.innerText = "Data Terkini Berhasil Dimuat ✅";
+            }
+        } catch (e) {
+            status.innerText = "Gagal memuat data dari Cloud ❌";
+            addItem();
+        }
     }
-}
-    // SIMPAN KE CLOUD
+
+    // FUNGSI SIMPAN KE CLOUD
     async function saveToCloud() {
-        const saveBtn = document.getElementById('saveBtn');
-        saveBtn.disabled = true;
-        saveBtn.innerText = "⏳ Menyimpan...";
-        
+        const btn = document.getElementById('saveBtn');
+        const status = document.getElementById('status');
+        btn.disabled = true;
+        btn.innerText = "⏳ Menyimpan...";
+
         const data = {
-            tanggal: document.getElementById('tanggal').value,
-            kegiatan: Array.from(document.querySelectorAll('.item-box')).map(item => ({
-                jenis: item.querySelector('.jenis').value,
-                ha: item.querySelector('.ha').value,
-                lokasi: item.querySelector('.lokasi').value,
-                hk: item.querySelector('.hk').value,
-                bahan: item.querySelector('.bahan').value,
-                namaAlat: item.querySelector('.nama-alat').value,
-                bekerja: item.querySelector('.bekerja').value,
-                rusak: item.querySelector('.rusak').value,
-                standby: item.querySelector('.standby').value,
-                ket: item.querySelector('.ket').value
+            tgl: document.getElementById('tanggal').value,
+            jobs: Array.from(document.querySelectorAll('.item-box')).map(box => ({
+                j: box.querySelector('.jenis').value,
+                h: box.querySelector('.ha').value,
+                l: box.querySelector('.lokasi').value,
+                k: box.querySelector('.hk').value,
+                a: box.querySelector('.nama-alat').value,
+                b: box.querySelector('.bekerja').value,
+                r: box.querySelector('.rusak').value,
+                s: box.querySelector('.standby').value,
+                txt: box.querySelector('.ket').value
             }))
         };
 
         try {
-            await fetch(SCRIPT_URL, {
-                method: 'POST',
+            const res = await fetch(URL, {
+                method: 'PUT',
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Master-Key": API_KEY
+                },
                 body: JSON.stringify(data)
             });
-            alert("Berhasil disimpan! Sekarang semua orang yang membuka link ini akan melihat data terbaru.");
-        } catch (e) { alert("Gagal menyimpan."); }
-        
-        saveBtn.disabled = false;
-        saveBtn.innerText = "☁️ Simpan & Update Semua Orang";
+
+            if (res.ok) {
+                alert("Berhasil Disimpan! Data di link ini sekarang sudah terupdate untuk semua orang.");
+                status.innerText = "Data Terupdate di Cloud ✅";
+            } else {
+                alert("Gagal menyimpan. Cek API Key atau Bin ID.");
+            }
+        } catch (e) {
+            alert("Kesalahan koneksi.");
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "☁️ Simpan & Update Semua Orang";
+        }
     }
 
-    function generateAndCopyWA() {
-        // Logika salin teks WA sama seperti sebelumnya (tanpa link panjang)
-        // ... (Kode salin WA sederhana)
-        alert("Laporan disalin!");
+    function copyToWA() {
+        let tgl = document.getElementById('tanggal').value.split('-').reverse().join('/') || '-';
+        let msg = `*PLANNING PEKERJAAN*\nTanggal: ${tgl}\n${"=".repeat(15)}\n\n`;
+        
+        document.querySelectorAll('.item-box').forEach((box, i) => {
+            msg += `*${i+1}. ${box.querySelector('.jenis').value}*\n`;
+            msg += `Plan: ${box.querySelector('.ha').value} HA | Lokasi: ${box.querySelector('.lokasi').value}\n`;
+            msg += `Alat: ${box.querySelector('.nama-alat').value} (B:${box.querySelector('.bekerja').value}, R:${box.querySelector('.rusak').value}, S:${box.querySelector('.standby').value})\n\n`;
+        });
+
+        msg += `*Lihat/Edit Online:* \n${window.location.origin + window.location.pathname}`;
+
+        navigator.clipboard.writeText(msg).then(() => alert("Laporan disalin!"));
     }
 
     window.onload = loadFromCloud;
 </script>
+
 </body>
 </html>
