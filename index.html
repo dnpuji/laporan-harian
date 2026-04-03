@@ -3,170 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planning Pekerjaan Sync</title>
+    <title>Planning Pekerjaan Sync v3</title>
     <style>
-        body { font-family: sans-serif; padding: 15px; background-color: #f4f4f9; }
-        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #1a73e8; font-size: 18px; border-bottom: 2px solid #1a73e8; padding-bottom: 10px; }
-        label { display: block; margin-top: 10px; font-weight: bold; font-size: 13px; }
-        input, textarea { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        .status-bar { text-align: center; font-size: 11px; margin-bottom: 15px; padding: 5px; border-radius: 4px; background: #eee; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 15px; background-color: #f0f2f5; color: #333; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #1a73e8; margin-bottom: 20px; text-transform: uppercase; font-size: 18px; border-bottom: 2px solid #1a73e8; padding-bottom: 10px; }
         
-        .btn-main { width: 100%; padding: 12px; margin-top: 10px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        .btn-add { background: #28a745; color: white; }
-        .btn-save { background: #1a73e8; color: white; }
-        .btn-copy { background: #6c757d; color: white; }
+        .status-bar { text-align: center; font-size: 12px; margin-bottom: 15px; padding: 8px; border-radius: 6px; background: #e8f0fe; color: #1967d2; font-weight: bold; }
+        label { display: block; margin-top: 12px; font-weight: bold; font-size: 13px; color: #555; }
+        input, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
         
-        .item-box { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 8px; background: #fff; position: relative; }
-        .item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .alat-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 5px; }
+        .item-box { border: 1px solid #e0e0e0; padding: 15px; margin-bottom: 20px; border-radius: 8px; background: #fff; position: relative; }
+        .item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #f8f9fa; padding: 8px 12px; border-radius: 6px; border-left: 4px solid #1a73e8; }
+        .item-header h3 { margin: 0; font-size: 15px; color: #1a73e8; }
+        
+        .nav-btns { display: flex; gap: 5px; }
+        .btn-nav { width: 32px; height: 32px; cursor: pointer; border: 1px solid #ccc; background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+        .btn-del { border-color: #f8d7da; color: #d93025; background: #fce8e6; }
+
+        .alat-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px; }
+        .alat-row div { display: flex; flex-direction: column; }
+        .alat-row label { font-size: 10px; margin-top: 0; color: #777; text-align: center; font-weight: normal; }
+        .alat-row input { text-align: center; padding: 8px; }
+
+        .btn-main { width: 100%; padding: 14px; margin-top: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; }
+        .btn-add { background-color: #28a745; color: white; }
+        .btn-save { background-color: #1a73e8; color: white; }
+        .btn-copy { background-color: #6c757d; color: white; }
+        .btn-reset { background-color: #dc3545; color: white; margin-top: 25px; font-size: 12px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h2>Planning Pekerjaan</h2>
-    <div id="status" class="status-bar">Menghubungkan ke Cloud...</div>
+    <div id="status" class="status-bar">Memuat data...</div>
     
-    <label>Tanggal :</label>
+    <label>Tanggal Rencana :</label>
     <input type="date" id="tanggal">
 
     <div id="form-container"></div>
 
-    <button class="btn-main btn-add" onclick="addItem()">+ Tambah Kegiatan</button>
+    <button class="btn-main btn-add" onclick="addItem()">+ Tambah Kegiatan Baru</button>
     <button class="btn-main btn-save" id="saveBtn" onclick="saveToCloud()">☁️ Simpan & Update Semua Orang</button>
-    <button class="btn-main btn-copy" onclick="copyToWA()">📋 Salin Teks ke WA</button>
+    <button class="btn-main btn-copy" onclick="copyToWA()">📋 Salin Laporan ke WhatsApp</button>
+    
+    <button class="btn-main btn-reset" onclick="resetForm()">🗑️ Hapus Total / Reset Form</button>
 </div>
 
 <script>
-    // --- KONFIGURASI JSONBIN ---
-    const BIN_ID = "69cf19e6aaba882197bd57e3"; 
-    const API_KEY = "$2a$10$/ggPELqckAHy5/mV.eJTr.sMUQIdq6zdRK5JVKfOB09rOgb9tr/u6"; 
+    // --- KONFIGURASI JSONBIN (PASTIKAN INI TERISI) ---
+    const BIN_ID = "MASUKKAN_BIN_ID_ANDA"; 
+    const API_KEY = "MASUKKAN_MASTER_KEY_ANDA"; 
     const URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
-    const itemHTML = `
+    const itemTemplate = `
         <div class="item-header">
-            <strong class="title">Kegiatan</strong>
-            <button onclick="this.closest('.item-box').remove()" style="color:red; border:none; background:none; cursor:pointer">✕ Hapus</button>
+            <h3 class="title-label">Kegiatan</h3>
+            <div class="nav-btns">
+                <button class="btn-nav" onclick="moveItem(this, -1)">↑</button>
+                <button class="btn-nav" onclick="moveItem(this, 1)">↓</button>
+                <button class="btn-nav btn-del" onclick="removeItem(this)">✕</button>
+            </div>
         </div>
-        <input type="text" class="jenis" placeholder="Jenis Pekerjaan">
-        <div style="display:flex; gap:5px; margin-top:5px">
-            <input type="text" class="ha" placeholder="HA Plan">
-            <input type="text" class="lokasi" placeholder="Lokasi">
+        
+        <label>Jenis Pekerjaan:</label>
+        <input type="text" class="jenis" placeholder="Contoh: Pemupukan">
+        
+        <div style="display:flex; gap:10px">
+            <div style="flex:1"><label>HA Plan:</label><input type="text" class="ha" placeholder="Luas"></div>
+            <div style="flex:2"><label>Lokasi:</label><input type="text" class="lokasi" placeholder="Blok"></div>
         </div>
-        <input type="text" class="hk" placeholder="Jumlah HK" style="margin-top:5px">
-        <label style="font-size:11px">Alat & Status (B/R/S):</label>
+
+        <label>Jumlah HK (Tenaga Kerja):</label>
+        <input type="text" class="hk" placeholder="Contoh: 10">
+
+        <label>Bahan yang digunakan:</label>
+        <input type="text" class="bahan" placeholder="Contoh: Urea 500kg">
+
+        <label>Alat yang digunakan:</label>
         <input type="text" class="nama-alat" placeholder="Nama Alat">
+        
         <div class="alat-row">
-            <input type="text" class="bekerja" placeholder="B">
-            <input type="text" class="rusak" placeholder="R">
-            <input type="text" class="standby" placeholder="S">
+            <div><label>Bekerja</label><input type="text" class="bekerja" placeholder="0"></div>
+            <div><label>Rusak</label><input type="text" class="rusak" placeholder="0"></div>
+            <div><label>Standby</label><input type="text" class="standby" placeholder="0"></div>
         </div>
-        <textarea class="ket" rows="2" placeholder="Keterangan..." style="margin-top:5px"></textarea>
+
+        <label>Keterangan Tambahan:</label>
+        <textarea class="ket" rows="2" placeholder="Catatan..."></textarea>
     `;
 
     function addItem() {
+        const container = document.getElementById('form-container');
         const div = document.createElement('div');
         div.className = 'item-box';
-        div.innerHTML = itemHTML;
-        document.getElementById('form-container').appendChild(div);
+        div.innerHTML = itemTemplate;
+        container.appendChild(div);
+        updateLabels();
     }
 
-    // FUNGSI MUAT DATA DARI CLOUD
+    function removeItem(btn) {
+        if(confirm("Hapus kegiatan ini?")) {
+            btn.closest('.item-box').remove();
+            updateLabels();
+        }
+    }
+
+    function moveItem(btn, direction) {
+        const item = btn.closest('.item-box');
+        if (direction === -1 && item.previousElementSibling) {
+            item.parentNode.insertBefore(item, item.previousElementSibling);
+        } else if (direction === 1 && item.nextElementSibling) {
+            item.parentNode.insertBefore(item.nextElementSibling, item);
+        }
+        updateLabels();
+    }
+
+    function updateLabels() {
+        document.querySelectorAll('.item-box').forEach((box, index) => {
+            box.querySelector('.title-label').innerText = `Kegiatan ${index + 1}`;
+        });
+    }
+
+    // --- FUNGSI CLOUD ---
     async function loadFromCloud() {
         const status = document.getElementById('status');
         try {
             const res = await fetch(URL, { headers: { "X-Master-Key": API_KEY } });
             const result = await res.json();
             const data = result.record;
-            
             if (data && data.jobs) {
                 document.getElementById('tanggal').value = data.tgl || "";
-                document.getElementById('form-container').innerHTML = "";
+                const container = document.getElementById('form-container');
+                container.innerHTML = "";
                 data.jobs.forEach(j => {
                     addItem();
-                    const last = document.getElementById('form-container').lastElementChild;
-                    last.querySelector('.jenis').value = j.j;
-                    last.querySelector('.ha').value = j.h;
-                    last.querySelector('.lokasi').value = j.l;
-                    last.querySelector('.hk').value = j.k;
-                    last.querySelector('.nama-alat').value = j.a;
-                    last.querySelector('.bekerja').value = j.b;
-                    last.querySelector('.rusak').value = j.r;
-                    last.querySelector('.standby').value = j.s;
-                    last.querySelector('.ket').value = j.txt;
+                    const last = container.lastElementChild;
+                    last.querySelector('.jenis').value = j.jenis || "";
+                    last.querySelector('.ha').value = j.ha || "";
+                    last.querySelector('.lokasi').value = j.lokasi || "";
+                    last.querySelector('.hk').value = j.hk || "";
+                    last.querySelector('.bahan').value = j.bahan || "";
+                    last.querySelector('.nama-alat').value = j.alat || "";
+                    last.querySelector('.bekerja').value = j.b || "";
+                    last.querySelector('.rusak').value = j.r || "";
+                    last.querySelector('.standby').value = j.s || "";
+                    last.querySelector('.ket').value = j.ket || "";
                 });
-                status.innerText = "Data Terkini Berhasil Dimuat ✅";
+                status.innerText = "Data Sinkron ✅";
             }
         } catch (e) {
-            status.innerText = "Gagal memuat data dari Cloud ❌";
+            status.innerText = "Gagal memuat ❌";
+            if(document.querySelectorAll('.item-box').length === 0) addItem();
+        }
+    }
+
+    async function saveToCloud() {
+        const btn = document.getElementById('saveBtn');
+        btn.disabled = true; btn.innerText = "⏳ Menyimpan...";
+        const data = {
+            tgl: document.getElementById('tanggal').value,
+            jobs: Array.from(document.querySelectorAll('.item-box')).map(box => ({
+                jenis: box.querySelector('.jenis').value,
+                ha: box.querySelector('.ha').value,
+                lokasi: box.querySelector('.lokasi').value,
+                hk: box.querySelector('.hk').value,
+                bahan: box.querySelector('.bahan').value,
+                alat: box.querySelector('.nama-alat').value,
+                b: box.querySelector('.bekerja').value,
+                r: box.querySelector('.rusak').value,
+                s: box.querySelector('.standby').value,
+                ket: box.querySelector('.ket').value
+            }))
+        };
+        try {
+            await fetch(URL, {
+                method: 'PUT',
+                headers: { "Content-Type": "application/json", "X-Master-Key": API_KEY },
+                body: JSON.stringify(data)
+            });
+            alert("Berhasil disimpan ke Cloud!");
+            document.getElementById('status').innerText = "Data Cloud Terupdate ✅";
+        } catch (e) { alert("Gagal menyimpan."); }
+        btn.disabled = false; btn.innerText = "☁️ Simpan & Update Semua Orang";
+    }
+
+    // --- PERBAIKAN FUNGSI COPY WA ---
+    function copyToWA() {
+        const tglInput = document.getElementById('tanggal').value;
+        const tgl = tglInput ? tglInput.split('-').reverse().join('/') : '-';
+        let msg = `*PLANNING PEKERJAAN*\nTanggal: ${tgl}\n${"=".repeat(20)}\n\n`;
+        
+        let totalHK = 0;
+
+        document.querySelectorAll('.item-box').forEach((box, i) => {
+            const jenis = box.querySelector('.jenis').value || '-';
+            const lokasi = box.querySelector('.lokasi').value || '-';
+            const ha = box.querySelector('.ha').value || '0';
+            const hk = box.querySelector('.hk').value || '0';
+            const bahan = box.querySelector('.bahan').value || '-';
+            const alat = box.querySelector('.nama-alat').value || '-';
+            const b = box.querySelector('.bekerja').value || '0';
+            const r = box.querySelector('.rusak').value || '0';
+            const s = box.querySelector('.standby').value || '0';
+            const ket = box.querySelector('.ket').value;
+
+            // Tambah ke total HK jika inputnya angka
+            if(!isNaN(hk)) totalHK += parseFloat(hk);
+
+            msg += `*KEGIATAN ${i+1}: ${jenis.toUpperCase()}*\n`;
+            msg += `📍 Lokasi: ${lokasi} (${ha} HA)\n`;
+            msg += `👷 Tenaga: ${hk} HK\n`;
+            msg += `📦 Bahan: ${bahan}\n`;
+            msg += `🚜 Alat: ${alat}\n`;
+            msg += `   - Bekerja: ${b}\n`;
+            msg += `   - Rusak: ${r}\n`;
+            msg += `   - Standby: ${s}\n`;
+            if(ket) msg += `📝 Ket: ${ket}\n`;
+            msg += `\n`;
+        });
+
+        msg += `${"=".repeat(20)}\n`;
+        msg += `*TOTAL TENAGA KERJA: ${totalHK} HK*\n\n`;
+        msg += `*Edit Online:* \n${window.location.origin + window.location.pathname}`;
+
+        navigator.clipboard.writeText(msg).then(() => alert("Laporan & Total HK Berhasil Disalin!"));
+    }
+
+    function resetForm() {
+        if(confirm("Hapus semua isian di layar?")) {
+            document.getElementById('form-container').innerHTML = "";
+            document.getElementById('tanggal').value = "";
             addItem();
         }
     }
 
-    // FUNGSI SIMPAN KE CLOUD
-    async function saveToCloud() {
-        const btn = document.getElementById('saveBtn');
-        const status = document.getElementById('status');
-        btn.disabled = true;
-        btn.innerText = "⏳ Menyimpan...";
-
-        const data = {
-            tgl: document.getElementById('tanggal').value,
-            jobs: Array.from(document.querySelectorAll('.item-box')).map(box => ({
-                j: box.querySelector('.jenis').value,
-                h: box.querySelector('.ha').value,
-                l: box.querySelector('.lokasi').value,
-                k: box.querySelector('.hk').value,
-                a: box.querySelector('.nama-alat').value,
-                b: box.querySelector('.bekerja').value,
-                r: box.querySelector('.rusak').value,
-                s: box.querySelector('.standby').value,
-                txt: box.querySelector('.ket').value
-            }))
-        };
-
-        try {
-            const res = await fetch(URL, {
-                method: 'PUT',
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-Master-Key": API_KEY
-                },
-                body: JSON.stringify(data)
-            });
-
-            if (res.ok) {
-                alert("Berhasil Disimpan! Data di link ini sekarang sudah terupdate untuk semua orang.");
-                status.innerText = "Data Terupdate di Cloud ✅";
-            } else {
-                alert("Gagal menyimpan. Cek API Key atau Bin ID.");
-            }
-        } catch (e) {
-            alert("Kesalahan koneksi.");
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "☁️ Simpan & Update Semua Orang";
-        }
-    }
-
-    function copyToWA() {
-        let tgl = document.getElementById('tanggal').value.split('-').reverse().join('/') || '-';
-        let msg = `*PLANNING PEKERJAAN*\nTanggal: ${tgl}\n${"=".repeat(15)}\n\n`;
-        
-        document.querySelectorAll('.item-box').forEach((box, i) => {
-            msg += `*${i+1}. ${box.querySelector('.jenis').value}*\n`;
-            msg += `Plan: ${box.querySelector('.ha').value} HA | Lokasi: ${box.querySelector('.lokasi').value}\n`;
-            msg += `Alat: ${box.querySelector('.nama-alat').value} (B:${box.querySelector('.bekerja').value}, R:${box.querySelector('.rusak').value}, S:${box.querySelector('.standby').value})\n\n`;
-        });
-
-        msg += `*Lihat/Edit Online:* \n${window.location.origin + window.location.pathname}`;
-
-        navigator.clipboard.writeText(msg).then(() => alert("Laporan disalin!"));
-    }
-
     window.onload = loadFromCloud;
 </script>
-
 </body>
 </html>
