@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoring Upkeep & Manuring - Merauke</title>
+    <title>Monitoring Upkeep & Manuring v6</title>
     <style>
         :root { --primary: #1a73e8; --secondary: #28a745; --danger: #dc3545; }
         body { font-family: 'Segoe UI', sans-serif; padding: 15px; background-color: #f0f2f5; margin: 0; }
@@ -17,13 +17,13 @@
         label { display: block; margin-top: 12px; font-weight: bold; font-size: 13px; }
         input, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
         
-        .item-box { border: 1px solid #e0e0e0; padding: 15px; margin-bottom: 15px; border-radius: 8px; background: #fff; border-left: 5px solid #ccc; }
+        .item-box { border: 1px solid #e0e0e0; padding: 15px; margin-bottom: 15px; border-radius: 8px; background: #fff; border-left: 5px solid #ccc; position: relative; }
         .item-plan { border-left-color: var(--primary); }
         .item-aktual { border-left-color: var(--secondary); }
         
         .item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: #f8f9fa; padding: 5px 10px; border-radius: 5px; }
         .nav-btns { display: flex; gap: 4px; }
-        .btn-nav { width: 30px; height: 30px; cursor: pointer; border: 1px solid #ccc; background: white; border-radius: 4px; }
+        .btn-nav { width: 30px; height: 30px; cursor: pointer; border: 1px solid #ccc; background: white; border-radius: 4px; font-weight: bold; }
         
         .alat-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px; }
         .alat-row div { text-align: center; font-size: 10px; }
@@ -33,6 +33,7 @@
         .btn-save { background: var(--primary); }
         .btn-csv { background: #6c757d; }
         .btn-wa { background: #25d366; }
+        .btn-main:active { transform: scale(0.98); }
         
         .hidden { display: none; }
     </style>
@@ -40,38 +41,38 @@
 <body>
 
 <div class="container">
-    <h2 style="text-align:center; font-size:18px; color:#333;">UPKEEP & MANURING SYSTEM</h2>
-    <div id="status" class="status-bar">Sinkronisasi Data Cloud...</div>
+    <h2 style="text-align:center; font-size:18px; color:#333; margin-top:0;">UPKEEP & MANURING SYSTEM</h2>
+    <div id="status" class="status-bar">Mencoba Sinkronisasi...</div>
 
     <div class="tabs">
         <button id="btn-tab-plan" class="tab-btn active" onclick="switchTab('plan')">PLANNING</button>
         <button id="btn-tab-aktual" class="tab-btn" onclick="switchTab('aktual')">AKTUAL</button>
     </div>
 
-    <label>Tanggal Kerja :</label>
+    <label>Tanggal Operasional :</label>
     <input type="date" id="tanggal">
 
     <div id="section-plan">
         <div id="container-plan"></div>
-        <button class="btn-main btn-add" onclick="addItem('plan')">+ Tambah Rencana Kerja</button>
+        <button class="btn-main btn-add" onclick="addItem('plan')">+ Tambah Item Planning</button>
     </div>
 
     <div id="section-aktual" class="hidden">
         <div id="container-aktual"></div>
-        <button class="btn-main btn-add" onclick="addItem('aktual')">+ Tambah Laporan Aktual</button>
+        <button class="btn-main btn-add" onclick="addItem('aktual')">+ Tambah Item Aktual</button>
     </div>
 
     <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
     
-    <button class="btn-main btn-save" id="saveBtn" onclick="saveToCloud()">☁️ Simpan & Sync Data Cloud</button>
-    <button id="waBtn" class="btn-main btn-wa" onclick="copyToWA()">📋 Salin WA (Planning)</button>
-    <button class="btn-main btn-csv" onclick="downloadCSV()">📥 Download CSV (Upkeep & Manuring)</button>
+    <button class="btn-main btn-save" id="saveBtn" onclick="saveToCloud()">☁️ SIMPAN & UPDATE CLOUD</button>
+    <button id="waBtn" class="btn-main btn-wa" onclick="copyToWA()">📋 SALIN WA (PLANNING)</button>
+    <button class="btn-main btn-csv" onclick="downloadSeparateCSV()">📥 DOWNLOAD CSV (PLAN & AKTUAL TERPISAH)</button>
 </div>
 
 <script>
     // --- KONFIGURASI JSONBIN ---
-    const BIN_ID = "69cf19e6aaba882197bd57e3"; 
-    const API_KEY = "$2a$10$/ggPELqckAHy5/mV.eJTr.sMUQIdq6zdRK5JVKfOB09rOgb9tr/u6"; 
+    const BIN_ID = "MASUKKAN_BIN_ID_ANDA"; 
+    const API_KEY = "MASUKKAN_X_MASTER_KEY_ANDA"; 
     const URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
     let currentMode = 'plan';
@@ -82,32 +83,32 @@
         document.getElementById(`btn-tab-${mode}`).classList.add('active');
         document.getElementById('section-plan').classList.toggle('hidden', mode !== 'plan');
         document.getElementById('section-aktual').classList.toggle('hidden', mode !== 'aktual');
-        document.getElementById('waBtn').innerText = `📋 Salin WA (${mode === 'plan' ? 'Planning' : 'Aktual'})`;
+        document.getElementById('waBtn').innerText = `📋 SALIN WA (${mode.toUpperCase()})`;
     }
 
     const itemTemplate = (type) => `
         <div class="item-header">
-            <strong class="label-idx">Pekerjaan</strong>
+            <strong class="label-idx">${type.toUpperCase()}</strong>
             <div class="nav-btns">
                 <button class="btn-nav" onclick="moveItem(this, -1)">↑</button>
                 <button class="btn-nav" onclick="moveItem(this, 1)">↓</button>
-                <button class="btn-nav" style="color:red" onclick="removeItem(this, '${type}')">✕</button>
+                <button class="btn-nav" style="color:var(--danger)" onclick="removeItem(this, '${type}')">✕</button>
             </div>
         </div>
-        <input type="text" class="jenis" placeholder="Contoh: Manuring / Weeding / Spraying">
+        <input type="text" class="jenis" placeholder="Pekerjaan (Manuring/Weeding/dll)">
         <div style="display:flex; gap:5px; margin-top:5px">
-            <input type="text" class="ha" placeholder="Luas (HA)">
-            <input type="text" class="lokasi" placeholder="Blok / Petak">
+            <input type="text" class="ha" placeholder="Luas HA">
+            <input type="text" class="lokasi" placeholder="Blok/Petak">
         </div>
-        <input type="text" class="hk" placeholder="Jumlah Tenaga (HK)" style="margin-top:5px">
-        <input type="text" class="bahan" placeholder="Bahan (Pupuk/Herbisida)" style="margin-top:5px">
-        <input type="text" class="alat" placeholder="Nama Alat / No. Lambung" style="margin-top:5px">
+        <input type="text" class="hk" placeholder="Jumlah HK" style="margin-top:5px">
+        <input type="text" class="bahan" placeholder="Bahan yang Digunakan" style="margin-top:5px">
+        <input type="text" class="alat" placeholder="Alat / No. Lambung" style="margin-top:5px">
         <div class="alat-row">
             <div><label>Bekerja</label><input type="text" class="b" value="0"></div>
             <div><label>Rusak</label><input type="text" class="r" value="0"></div>
             <div><label>Standby</label><input type="text" class="s" value="0"></div>
         </div>
-        <textarea class="ket" rows="2" placeholder="Catatan Tambahan..." style="margin-top:5px"></textarea>
+        <textarea class="ket" rows="2" placeholder="Keterangan Tambahan..." style="margin-top:5px"></textarea>
     `;
 
     function addItem(type, data = null) {
@@ -181,9 +182,10 @@
                 headers: { "Content-Type": "application/json", "X-Master-Key": API_KEY },
                 body: JSON.stringify(payload)
             });
-            alert("Sinkronisasi Berhasil!");
+            alert("Berhasil Disimpan ke Cloud!");
+            document.getElementById('status').innerText = "Data Sinkron ✅";
         } catch (e) { alert("Gagal Simpan."); }
-        btn.innerText = "☁️ Simpan & Sync Data Cloud";
+        btn.innerText = "☁️ SIMPAN & UPDATE CLOUD";
     }
 
     async function loadCloud() {
@@ -221,18 +223,33 @@
         navigator.clipboard.writeText(msg).then(() => alert(`Laporan ${currentMode.toUpperCase()} Disalin!`));
     }
 
-    function downloadCSV() {
-        const tgl = document.getElementById('tanggal').value || 'upkeep_manuring';
-        let csv = "TIPE,NO,JENIS,HA,LOKASI,HK,BAHAN,ALAT,BEKERJA,RUSAK,STANDBY,KETERANGAN\n";
-        ['plan', 'aktual'].forEach(type => {
+    // --- FUNGSI DOWNLOAD TERPISAH ---
+    function downloadSeparateCSV() {
+        const tgl = document.getElementById('tanggal').value || 'laporan';
+        
+        const generateCSV = (type) => {
+            let csv = "NO,JENIS PEKERJAAN,LUAS (HA),LOKASI/BLOK,TENAGA (HK),BAHAN,ALAT,BEKERJA,RUSAK,STANDBY,KETERANGAN\n";
             collectData(type).forEach((j, i) => {
-                csv += `${type.toUpperCase()},${i+1},"${j.jenis}","${j.ha}","${j.lokasi}","${j.hk}","${j.bahan}","${j.alat}","${j.b}","${j.r}","${j.s}","${j.ket}"\n`;
+                csv += `${i+1},"${j.jenis}","${j.ha}","${j.lokasi}","${j.hk}","${j.bahan}","${j.alat}","${j.b}","${j.r}","${j.s}","${j.ket}"\n`;
             });
-        });
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.setAttribute('href', url); a.setAttribute('download', `${tgl}.csv`); a.click();
+            return csv;
+        };
+
+        const downloadFile = (content, filename) => {
+            const blob = new Blob([content], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename; a.click();
+            window.URL.revokeObjectURL(url);
+        };
+
+        // Download Planning
+        downloadFile(generateCSV('plan'), `PLAN_${tgl}.csv`);
+        
+        // Jeda sebentar agar browser tidak memblokir download ganda
+        setTimeout(() => {
+            downloadFile(generateCSV('aktual'), `AKTUAL_${tgl}.csv`);
+        }, 500);
     }
 
     window.onload = loadCloud;
