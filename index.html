@@ -3,31 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Monitoring Tebu - Merauke</title>
+    <title>Monitoring Upkeep & Manuring - Merauke</title>
     <style>
         :root { --primary: #1a73e8; --secondary: #28a745; --danger: #dc3545; }
         body { font-family: 'Segoe UI', sans-serif; padding: 15px; background-color: #f0f2f5; margin: 0; }
         .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         
-        /* Tab Styling */
         .tabs { display: flex; gap: 5px; margin-bottom: 20px; background: #eee; padding: 5px; border-radius: 8px; }
-        .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; background: none; transition: 0.3s; }
+        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; background: none; transition: 0.3s; }
         .tab-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
-        .status-bar { text-align: center; font-size: 11px; margin-bottom: 15px; padding: 8px; border-radius: 6px; background: #e8f0fe; color: #1967d2; }
+        .status-bar { text-align: center; font-size: 11px; margin-bottom: 15px; padding: 8px; border-radius: 6px; background: #e8f0fe; color: #1967d2; font-weight: bold; }
         label { display: block; margin-top: 12px; font-weight: bold; font-size: 13px; }
         input, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
         
-        .item-box { border: 1px solid #e0e0e0; padding: 15px; margin-bottom: 15px; border-radius: 8px; background: #fff; }
-        .item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: #f8f9fa; padding: 5px 10px; border-radius: 5px; }
+        .item-box { border: 1px solid #e0e0e0; padding: 15px; margin-bottom: 15px; border-radius: 8px; background: #fff; border-left: 5px solid #ccc; }
+        .item-plan { border-left-color: var(--primary); }
+        .item-aktual { border-left-color: var(--secondary); }
         
+        .item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: #f8f9fa; padding: 5px 10px; border-radius: 5px; }
         .nav-btns { display: flex; gap: 4px; }
         .btn-nav { width: 30px; height: 30px; cursor: pointer; border: 1px solid #ccc; background: white; border-radius: 4px; }
         
         .alat-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px; }
         .alat-row div { text-align: center; font-size: 10px; }
 
-        .btn-main { width: 100%; padding: 14px; margin-top: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; }
+        .btn-main { width: 100%; padding: 14px; margin-top: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
         .btn-add { background: var(--secondary); }
         .btn-save { background: var(--primary); }
         .btn-csv { background: #6c757d; }
@@ -39,38 +40,38 @@
 <body>
 
 <div class="container">
-    <h2>Monitoring Pekerjaan</h2>
-    <div id="status" class="status-bar">Memuat data Cloud...</div>
+    <h2 style="text-align:center; font-size:18px; color:#333;">UPKEEP & MANURING SYSTEM</h2>
+    <div id="status" class="status-bar">Sinkronisasi Data Cloud...</div>
 
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('plan')">PLANNING</button>
-        <button class="tab-btn" onclick="switchTab('aktual')">AKTUAL</button>
+        <button id="btn-tab-plan" class="tab-btn active" onclick="switchTab('plan')">PLANNING</button>
+        <button id="btn-tab-aktual" class="tab-btn" onclick="switchTab('aktual')">AKTUAL</button>
     </div>
 
-    <label>Tanggal Pekerjaan :</label>
+    <label>Tanggal Kerja :</label>
     <input type="date" id="tanggal">
 
     <div id="section-plan">
         <div id="container-plan"></div>
-        <button class="btn-main btn-add" onclick="addItem('plan')">+ Tambah Planning</button>
+        <button class="btn-main btn-add" onclick="addItem('plan')">+ Tambah Rencana Kerja</button>
     </div>
 
     <div id="section-aktual" class="hidden">
         <div id="container-aktual"></div>
-        <button class="btn-main btn-add" onclick="addItem('aktual')">+ Tambah Aktual</button>
+        <button class="btn-main btn-add" onclick="addItem('aktual')">+ Tambah Laporan Aktual</button>
     </div>
 
     <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
     
-    <button class="btn-main btn-save" id="saveBtn" onclick="saveToCloud()">☁️ Simpan Semua ke Cloud</button>
-    <button class="btn-main btn-wa" onclick="copyToWA()">📋 Salin Laporan WA (Aktual)</button>
-    <button class="btn-main btn-csv" onclick="downloadCSV()">📥 Download Data ke CSV (Excel)</button>
+    <button class="btn-main btn-save" id="saveBtn" onclick="saveToCloud()">☁️ Simpan & Sync Data Cloud</button>
+    <button id="waBtn" class="btn-main btn-wa" onclick="copyToWA()">📋 Salin WA (Planning)</button>
+    <button class="btn-main btn-csv" onclick="downloadCSV()">📥 Download CSV (Upkeep & Manuring)</button>
 </div>
 
 <script>
     // --- KONFIGURASI JSONBIN ---
-    const BIN_ID = "69cf19e6aaba882197bd57e3"; 
-    const API_KEY = "$2a$10$/ggPELqckAHy5/mV.eJTr.sMUQIdq6zdRK5JVKfOB09rOgb9tr/u6"; 
+    const BIN_ID = "MASUKKAN_BIN_ID_ANDA"; 
+    const API_KEY = "MASUKKAN_MASTER_KEY_ANDA"; 
     const URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
     let currentMode = 'plan';
@@ -78,40 +79,40 @@
     function switchTab(mode) {
         currentMode = mode;
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        event.target.classList.add('active');
-        
+        document.getElementById(`btn-tab-${mode}`).classList.add('active');
         document.getElementById('section-plan').classList.toggle('hidden', mode !== 'plan');
         document.getElementById('section-aktual').classList.toggle('hidden', mode !== 'aktual');
+        document.getElementById('waBtn').innerText = `📋 Salin WA (${mode === 'plan' ? 'Planning' : 'Aktual'})`;
     }
 
     const itemTemplate = (type) => `
         <div class="item-header">
-            <strong class="label-idx">Kegiatan</strong>
+            <strong class="label-idx">Pekerjaan</strong>
             <div class="nav-btns">
                 <button class="btn-nav" onclick="moveItem(this, -1)">↑</button>
                 <button class="btn-nav" onclick="moveItem(this, 1)">↓</button>
-                <button class="btn-nav" style="color:red" onclick="this.closest('.item-box').remove(); updateLabels('${type}')">✕</button>
+                <button class="btn-nav" style="color:red" onclick="removeItem(this, '${type}')">✕</button>
             </div>
         </div>
-        <input type="text" class="jenis" placeholder="Jenis Pekerjaan">
+        <input type="text" class="jenis" placeholder="Contoh: Manuring / Weeding / Spraying">
         <div style="display:flex; gap:5px; margin-top:5px">
-            <input type="text" class="ha" placeholder="HA">
-            <input type="text" class="lokasi" placeholder="Lokasi">
+            <input type="text" class="ha" placeholder="Luas (HA)">
+            <input type="text" class="lokasi" placeholder="Blok / Petak">
         </div>
-        <input type="text" class="hk" placeholder="Jumlah HK" style="margin-top:5px">
-        <input type="text" class="bahan" placeholder="Bahan" style="margin-top:5px">
-        <input type="text" class="alat" placeholder="Nama Alat" style="margin-top:5px">
+        <input type="text" class="hk" placeholder="Jumlah Tenaga (HK)" style="margin-top:5px">
+        <input type="text" class="bahan" placeholder="Bahan (Pupuk/Herbisida)" style="margin-top:5px">
+        <input type="text" class="alat" placeholder="Nama Alat / No. Lambung" style="margin-top:5px">
         <div class="alat-row">
-            <div><label>Bekerja</label><input type="text" class="b"></div>
-            <div><label>Rusak</label><input type="text" class="r"></div>
-            <div><label>Standby</label><input type="text" class="s"></div>
+            <div><label>Bekerja</label><input type="text" class="b" value="0"></div>
+            <div><label>Rusak</label><input type="text" class="r" value="0"></div>
+            <div><label>Standby</label><input type="text" class="s" value="0"></div>
         </div>
-        <textarea class="ket" rows="2" placeholder="Keterangan..." style="margin-top:5px"></textarea>
+        <textarea class="ket" rows="2" placeholder="Catatan Tambahan..." style="margin-top:5px"></textarea>
     `;
 
     function addItem(type, data = null) {
         const div = document.createElement('div');
-        div.className = 'item-box';
+        div.className = `item-box item-${type}`;
         div.innerHTML = itemTemplate(type);
         document.getElementById(`container-${type}`).appendChild(div);
         if(data) {
@@ -121,12 +122,19 @@
             div.querySelector('.hk').value = data.hk || "";
             div.querySelector('.bahan').value = data.bahan || "";
             div.querySelector('.alat').value = data.alat || "";
-            div.querySelector('.b').value = data.b || "";
-            div.querySelector('.r').value = data.r || "";
-            div.querySelector('.s').value = data.s || "";
+            div.querySelector('.b').value = data.b || "0";
+            div.querySelector('.r').value = data.r || "0";
+            div.querySelector('.s').value = data.s || "0";
             div.querySelector('.ket').value = data.ket || "";
         }
         updateLabels(type);
+    }
+
+    function removeItem(btn, type) {
+        if(confirm("Hapus baris ini?")) {
+            btn.closest('.item-box').remove();
+            updateLabels(type);
+        }
     }
 
     function updateLabels(type) {
@@ -138,12 +146,12 @@
     function moveItem(btn, dir) {
         const box = btn.closest('.item-box');
         const parent = box.parentNode;
+        const type = parent.id.replace('container-', '');
         if(dir === -1 && box.previousElementSibling) parent.insertBefore(box, box.previousElementSibling);
         if(dir === 1 && box.nextElementSibling) parent.insertBefore(box.nextElementSibling, box);
-        updateLabels(parent.id.replace('container-', ''));
+        updateLabels(type);
     }
 
-    // --- DATA HANDLING ---
     function collectData(type) {
         return Array.from(document.querySelectorAll(`#container-${type} .item-box`)).map(box => ({
             jenis: box.querySelector('.jenis').value,
@@ -173,9 +181,9 @@
                 headers: { "Content-Type": "application/json", "X-Master-Key": API_KEY },
                 body: JSON.stringify(payload)
             });
-            alert("Data Planning & Aktual Tersimpan!");
+            alert("Sinkronisasi Berhasil!");
         } catch (e) { alert("Gagal Simpan."); }
-        btn.innerText = "☁️ Simpan Semua ke Cloud";
+        btn.innerText = "☁️ Simpan & Sync Data Cloud";
     }
 
     async function loadCloud() {
@@ -184,40 +192,47 @@
             const result = await res.json();
             const d = result.record;
             document.getElementById('tanggal').value = d.tgl || "";
-            if(d.plan) d.plan.forEach(item => addItem('plan', item));
-            if(d.aktual) d.aktual.forEach(item => addItem('aktual', item));
-            document.getElementById('status').innerText = "Cloud Terkoneksi ✅";
-        } catch (e) { addItem('plan'); addItem('aktual'); }
+            document.getElementById('container-plan').innerHTML = "";
+            document.getElementById('container-aktual').innerHTML = "";
+            if(d.plan && d.plan.length > 0) d.plan.forEach(item => addItem('plan', item)); else addItem('plan');
+            if(d.aktual && d.aktual.length > 0) d.aktual.forEach(item => addItem('aktual', item)); else addItem('aktual');
+            document.getElementById('status').innerText = "Data Terkini: Sinkron ✅";
+        } catch (e) { 
+            document.getElementById('status').innerText = "Mode Offline";
+            addItem('plan'); addItem('aktual'); 
+        }
     }
 
     function copyToWA() {
-        const tgl = document.getElementById('tanggal').value.split('-').reverse().join('/') || '-';
-        let msg = `*LAPORAN AKTUAL PEKERJAAN*\nTanggal: ${tgl}\n${"=".repeat(20)}\n\n`;
+        const tglInput = document.getElementById('tanggal').value;
+        const tgl = tglInput ? tglInput.split('-').reverse().join('/') : '-';
+        const labelLaporan = currentMode === 'plan' ? 'PLANNING UPKEEP & MANURING' : 'AKTUAL UPKEEP & MANURING';
+        
+        let msg = `*${labelLaporan}*\nTanggal: ${tgl}\n${"=".repeat(20)}\n\n`;
         let totalHK = 0;
-        collectData('aktual').forEach((j, i) => {
+        const dataToCopy = collectData(currentMode);
+
+        dataToCopy.forEach((j, i) => {
             totalHK += parseFloat(j.hk) || 0;
-            msg += `*${i+1}. ${j.jenis.toUpperCase()}*\n📍 Lokasi: ${j.lokasi} (${j.ha} HA)\n👷 Tenaga: ${j.hk} HK\n📦 Bahan: ${j.bahan}\n🚜 Alat: ${j.alat} (B:${j.b}, R:${j.r}, S:${j.s})\n📝 Ket: ${j.ket}\n\n`;
+            msg += `*${i+1}. ${j.jenis.toUpperCase() || '-'}*\n📍 Lokasi: ${j.lokasi || '-'} (${j.ha || 0} HA)\n👷 Tenaga: ${j.hk || 0} HK\n📦 Bahan: ${j.bahan || '-'}\n🚜 Alat: ${j.alat || '-'}\n   (Bekerja: ${j.b}, Rusak: ${j.r}, Standby: ${j.s})\n📝 Ket: ${j.ket || '-'}\n\n`;
         });
-        msg += `*TOTAL HK AKTUAL: ${totalHK} HK*`;
-        navigator.clipboard.writeText(msg).then(() => alert("Teks Aktual Disalin!"));
+        
+        msg += `${"=".repeat(20)}\n*TOTAL TENAGA KERJA: ${totalHK} HK*`;
+        navigator.clipboard.writeText(msg).then(() => alert(`Laporan ${currentMode.toUpperCase()} Disalin!`));
     }
 
     function downloadCSV() {
-        const tgl = document.getElementById('tanggal').value || 'data';
+        const tgl = document.getElementById('tanggal').value || 'upkeep_manuring';
         let csv = "TIPE,NO,JENIS,HA,LOKASI,HK,BAHAN,ALAT,BEKERJA,RUSAK,STANDBY,KETERANGAN\n";
-        
         ['plan', 'aktual'].forEach(type => {
             collectData(type).forEach((j, i) => {
                 csv += `${type.toUpperCase()},${i+1},"${j.jenis}","${j.ha}","${j.lokasi}","${j.hk}","${j.bahan}","${j.alat}","${j.b}","${j.r}","${j.s}","${j.ket}"\n`;
             });
         });
-
         const blob = new Blob([csv], { type: 'text/csv' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.setAttribute('href', url);
-        a.setAttribute('download', `Laporan_${tgl}.csv`);
-        a.click();
+        a.setAttribute('href', url); a.setAttribute('download', `${tgl}.csv`); a.click();
     }
 
     window.onload = loadCloud;
