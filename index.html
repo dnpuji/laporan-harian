@@ -3,46 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoring Upkeep v2.30</title>
+    <title>Monitoring Upkeep v2.31</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root { --primary: #2d5a27; --accent: #6b8e23; --bg: #f8fafc; --text: #334155; --danger: #ef4444; --success: #22c55e; --warning: #f59e0b; --blue: #3b82f6; }
         body { font-family: 'Inter', sans-serif; margin: 0; padding: 10px; background: var(--bg); color: var(--text); font-size: 13px; padding-bottom: 100px; }
-        .header { background: white; padding: 15px; text-align: center; border-radius: 15px; margin-bottom: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border-bottom: 3px solid var(--primary); }
-        
-        /* Navigasi */
-        .tab-menu { display: flex; gap: 5px; margin-bottom: 10px; overflow-x: auto; white-space: nowrap; padding: 5px 0; }
-        .tab-menu button { flex: 1; padding: 10px 12px; border: none; border-radius: 10px; cursor: pointer; background: #e2e8f0; font-weight: bold; color: #64748b; font-size: 11px; }
+        .header { background: white; padding: 15px; text-align: center; border-radius: 15px; margin-bottom: 10px; border-bottom: 3px solid var(--primary); }
+        .tab-menu { display: flex; gap: 5px; margin-bottom: 10px; overflow-x: auto; padding: 5px 0; }
+        .tab-menu button { flex: 1; padding: 10px; border: none; border-radius: 10px; cursor: pointer; background: #e2e8f0; font-weight: bold; color: #64748b; font-size: 10px; }
         .tab-menu button.active { background: var(--primary); color: white; }
-
         .card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 15px; }
         
-        /* Form & List */
+        /* Dashboard & Progress */
+        .dash-card { background: white; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid #e2e8f0; }
+        .compare-row { padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+        .progress-bar { background: #e2e8f0; border-radius: 5px; height: 8px; margin-top: 5px; overflow: hidden; }
+        .progress-fill { background: var(--success); height: 100%; transition: width 0.5s; }
+        .reason-text { font-size: 10px; color: #ef4444; font-style: italic; margin-top: 3px; display: block; }
+
+        /* Form */
         .row { display: flex; gap: 8px; margin-bottom: 8px; }
         .paddock-row { display: flex; flex-direction: column; gap: 5px; background: #f1f5f9; padding: 10px; border-radius: 10px; margin-bottom: 8px; position: relative; }
-        input, textarea, select { padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; outline: none; box-sizing: border-box; }
-        .btn-main { background: var(--primary); color: white; border: none; width: 100%; padding: 15px; border-radius: 12px; font-weight: 700; cursor: pointer; margin-top: 5px; }
+        input, textarea, select { padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; outline: none; box-sizing: border-box; width: 100%; }
+        .btn-main { background: var(--primary); color: white; border: none; width: 100%; padding: 15px; border-radius: 12px; font-weight: 700; cursor: pointer; }
         
-        /* Accordion & Order */
-        .acc-item { background: white; margin-bottom: 8px; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
-        .acc-main-row { display: flex; align-items: center; background: #f8fafc; }
-        .acc-header { flex: 1; padding: 12px; font-weight: bold; color: #0f172a; cursor: pointer; }
-        .order-btns { display: flex; gap: 3px; padding-right: 10px; }
-        .btn-o { background: white; border: 1px solid #cbd5e1; border-radius: 5px; padding: 4px 8px; font-size: 10px; cursor: pointer; }
-        .acc-body { padding: 12px; display: none; background: white; border-top: 1px solid #eee; font-size: 12px; line-height: 1.6; }
-
-        /* Dashboard & Compare */
-        .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        .dash-card { background: white; padding: 12px; border-radius: 12px; text-align: center; border-bottom: 3px solid var(--primary); }
-        .pct-text { font-size: 18px; font-weight: 800; color: var(--primary); }
-        .compare-row { padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 11px; }
-        .progress-bar { background: #e2e8f0; border-radius: 5px; height: 6px; margin-top: 5px; overflow: hidden; }
-        .progress-fill { background: var(--success); height: 100%; }
-
-        /* Action Buttons */
-        .action-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 10px; }
-        .btn-act { padding: 10px; border: none; border-radius: 8px; color: white; font-weight: bold; font-size: 10px; cursor: pointer; text-align: center; }
+        .acc-item { background: white; margin-bottom: 8px; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; }
+        .acc-header { padding: 12px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; }
+        .acc-body { padding: 12px; display: none; border-top: 1px solid #eee; font-size: 12px; }
 
         .total-footer { position: fixed; bottom: 0; left: 0; right: 0; background: #1e293b; color: white; padding: 15px; text-align: center; font-weight: bold; z-index: 100; border-top: 3px solid var(--primary); }
     </style>
@@ -50,8 +39,7 @@
 <body>
 
 <div class="header">
-    <h2 style="margin:0; color: var(--primary); font-size: 18px;">Monitoring Upkeep</h2>
-    <span style="font-size: 10px; color: #64748b; font-weight: bold; text-transform: uppercase;">Agricultural Mechanization System</span>
+    <h2 style="margin:0; color: var(--primary); font-size: 18px;">Monitoring Upkeep v2.31</h2>
 </div>
 
 <div class="tab-menu">
@@ -63,30 +51,28 @@
 
 <div id="viewDash">
     <div class="card" style="text-align:center;">
-        <input type="date" id="tglDash" onchange="loadDashboard()" style="border:none; font-weight:bold; color:var(--primary);">
+        <input type="date" id="tglDash" onchange="loadDashboard()" style="border:none; font-weight:bold; color:var(--primary); width:auto;">
     </div>
-    <div class="dash-grid">
-        <div class="dash-card"><span style="font-size:9px; font-weight:bold;">CAPAIAN LUAS</span><br><span id="dashPctLuas" class="pct-text">0%</span></div>
-        <div class="dash-card"><span style="font-size:9px; font-weight:bold;">EFISIENSI HK</span><br><span id="dashPctHK" class="pct-text">0%</span></div>
+    
+    <div id="captureArea">
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <b style="color:var(--primary)">PRODUKTIVITAS PER KEGIATAN</b>
+                <span id="labelTglDash" style="font-size:10px; font-weight:bold;"></span>
+            </div>
+            <div id="listKomparasi"></div>
+        </div>
     </div>
-    <div class="card">
-        <b style="font-size:12px; color:var(--primary)">KOMPARASI PER KEGIATAN</b>
-        <div id="listKomparasi" style="margin-top:10px;"></div>
-    </div>
+    <button class="btn-main" style="background:var(--blue); margin-bottom:20px;" onclick="downloadDashJPG()">📸 DOWNLOAD DASHBOARD (JPG)</button>
 </div>
 
 <div id="viewMain" style="display:none;">
-    <div class="card" style="text-align:center;">
-        <input type="date" id="tglLaporan" onchange="loadData()" style="border:none; font-weight:bold; color:var(--primary);">
-    </div>
+    <div class="card" style="text-align:center;"><input type="date" id="tglLaporan" onchange="loadData()" style="border:none; font-weight:bold; color:var(--primary); width:auto;"></div>
 
     <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <b id="formTitle">Input Data</b>
-            <button onclick="hapusSemuaHariIni()" style="background:var(--danger); color:white; border:none; padding:5px 8px; border-radius:5px; font-size:9px;">HAPUS SEMUA</button>
-        </div>
+        <b id="formTitle">Input Data</b>
         <input type="hidden" id="editId">
-        <input type="text" id="kegiatan" placeholder="📝 Nama Kegiatan" style="width:100%; margin-top:10px;">
+        <input type="text" id="kegiatan" placeholder="📝 Nama Kegiatan" style="margin-top:10px;">
         
         <div id="paddockContainer" style="margin-top:10px;">
             <div class="paddock-row">
@@ -97,37 +83,32 @@
         <button onclick="addRow('paddockContainer')" style="background:none; border:1px dashed var(--primary); color:var(--primary); width:100%; padding:8px; border-radius:10px; margin-bottom:10px;">+ Paddock</button>
 
         <div class="row"><input type="number" id="hk" placeholder="👷 HK"><input type="text" id="unit" placeholder="🚜 Alat"></div>
-        <div class="row">
-            <input type="number" id="jln" placeholder="🟢 Rdy" value="0">
-            <input type="number" id="rsk" placeholder="🔴 Bdn" value="0">
-            <input type="number" id="std" placeholder="🟡 Sby" value="0">
-        </div>
         <div id="bahanContainer"><div class="row"><input type="text" class="b-name" placeholder="🧪 Bahan"></div></div>
         <button onclick="addRow('bahanContainer')" style="background:none; border:1px dashed var(--primary); color:var(--primary); width:100%; padding:8px; border-radius:10px; margin-bottom:10px;">+ Bahan</button>
         
-        <textarea id="ket" placeholder="ℹ️ Keterangan..." rows="2" style="width:100%;"></textarea>
+        <textarea id="catatan" placeholder="🚩 Catatan / Alasan (Jika target tidak tercapai)" rows="2" style="margin-bottom:10px; border:1px solid var(--danger);"></textarea>
         <button class="btn-main" onclick="simpanData()">💾 SIMPAN DATA</button>
         <button id="btnUpdate" style="display:none; background:var(--blue); color:white; width:100%; padding:15px; border-radius:12px; margin-top:5px; border:none;" onclick="updateData()">🆙 UPDATE DATA</button>
     </div>
 
-    <div class="action-grid">
-        <button class="btn-act" style="background:var(--success)" onclick="salinWA()">🟢 WA</button>
-        <button class="btn-act" style="background:var(--blue)" onclick="copyToHasil()">🔄 HASIL</button>
-        <button class="btn-act" style="background:#64748b" onclick="downloadCSV()">📂 CSV</button>
+    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:5px; margin-bottom:10px;">
+        <button onclick="salinWA()" style="background:var(--success); color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; font-size:10px;">SALIN WA</button>
+        <button onclick="copyToHasil()" style="background:var(--blue); color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; font-size:10px;">KE HASIL</button>
+        <button onclick="hapusSemuaHariIni()" style="background:var(--danger); color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; font-size:10px;">HAPUS</button>
     </div>
-
     <div id="displayList"></div>
 </div>
 
 <div id="viewRekap" style="display:none;">
     <div class="card">
         <div class="row"><input type="date" id="rekapMulai"><input type="date" id="rekapSelesai"></div>
-        <select id="filterType" style="width:100%; margin-bottom:10px;">
+        <select id="filterType" style="margin-bottom:10px;">
             <option value="SEMUA">SEMUA DATA</option>
-            <option value="Planning">PLANNING SAJA</option>
-            <option value="Hasil">HASIL SAJA</option>
+            <option value="Planning">PLANNING</option>
+            <option value="Hasil">HASIL</option>
         </select>
         <button class="btn-main" onclick="prosesHistory()">🔎 CARI HISTORY</button>
+        <button id="btnDownloadHistory" style="display:none; background:#64748b; color:white; border:none; width:100%; padding:12px; border-radius:12px; font-weight:bold; margin-top:8px;" onclick="downloadHistoryCSV()">📂 DOWNLOAD CSV HISTORY</button>
     </div>
     <div id="hasilRekap"></div>
 </div>
@@ -146,6 +127,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     let currentTab = "Dash";
+    let historyGlobal = [];
 
     function switchTab(t) {
         currentTab = t;
@@ -177,17 +159,14 @@
         const paddocks = Array.from(document.querySelectorAll('.p-name')).map((el, i) => ({
             name: el.value, luas: parseFloat(document.querySelectorAll('.p-luas')[i].value) || 0
         })).filter(p => p.name !== "");
-        const bahans = Array.from(document.querySelectorAll('.b-name')).map(el => el.value).filter(b => b !== "");
         
         const payload = {
             tgl, type: currentTab, kegiatan: document.getElementById('kegiatan').value,
-            paddocks, bahans, hk: parseInt(document.getElementById('hk').value) || 0,
-            unit: document.getElementById('unit').value, jln: parseInt(document.getElementById('jln').value) || 0,
-            rsk: parseInt(document.getElementById('rsk').value) || 0, std: parseInt(document.getElementById('std').value) || 0,
-            ket: document.getElementById('ket').value, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            paddocks, bahans: Array.from(document.querySelectorAll('.b-name')).map(el => el.value).filter(b => b !== ""),
+            hk: parseInt(document.getElementById('hk').value) || 0, unit: document.getElementById('unit').value,
+            catatan: document.getElementById('catatan').value, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
-
-        if(!payload.kegiatan) return alert("Isi nama kegiatan!");
+        if(!payload.kegiatan) return alert("Isi Kegiatan!");
         await db.collection("reports_v13").add(payload);
         clearForm();
     }
@@ -196,30 +175,21 @@
         const tgl = document.getElementById('tglLaporan').value;
         db.collection("reports_v13").where("tgl", "==", tgl).where("type", "==", currentTab).onSnapshot(snap => {
             let listHtml = "", totalHK = 0;
-            const items = [];
-            snap.forEach(doc => items.push({id: doc.id, ...doc.data()}));
-            items.sort((a,b) => (a.updatedAt?.seconds || 0) - (b.updatedAt?.seconds || 0));
-
-            items.forEach(d => {
-                totalHK += (d.hk || 0);
+            snap.forEach(doc => {
+                const d = doc.data(); totalHK += (d.hk || 0);
                 const sumL = d.paddocks.reduce((a, b) => a + (parseFloat(b.luas) || 0), 0);
-                listHtml += `<div class="acc-item" id="item-${d.id}">
-                    <div class="acc-main-row">
-                        <div class="acc-header" onclick="toggleAcc('${d.id}')">📝 ${d.kegiatan} (${sumL.toFixed(2)} Ha)</div>
-                        <div class="order-btns">
-                            <button class="btn-o" onclick="moveItem('${d.id}', 'up')">▲</button>
-                            <button class="btn-o" onclick="moveItem('${d.id}', 'down')">▼</button>
+                listHtml += `<div class="acc-item">
+                    <div class="acc-header" onclick="toggleAcc('${doc.id}')">
+                        <span>📝 ${d.kegiatan} (${sumL.toFixed(2)} Ha)</span>
+                        <div style="display:flex; gap:5px;">
+                            <button onclick="editTarik('${doc.id}')" style="background:var(--blue); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:10px;">EDIT</button>
+                            <button onclick="hapusSatu('${doc.id}')" style="background:var(--danger); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:10px;">✕</button>
                         </div>
                     </div>
-                    <div class="acc-body" id="body-${d.id}">
-                        <b>📍 Paddock:</b> ${d.paddocks.map(p => `${p.name} (${p.luas} Ha)`).join(", ")}<br>
-                        <b>👷 HK:</b> ${d.hk} | <b>🚜 Alat:</b> ${d.unit || "-"}<br>
-                        <b>🧪 Bahan:</b> ${d.bahans.join(", ") || "-"}<br>
-                        <b>ℹ️ Ket:</b> ${d.ket || "-"}<br>
-                        <div class="row" style="margin-top:10px;">
-                            <button onclick="editTarik('${d.id}')" style="flex:1; background:var(--blue); color:white; border:none; padding:8px; border-radius:5px;">EDIT</button>
-                            <button onclick="hapusSatu('${d.id}')" style="flex:1; background:var(--danger); color:white; border:none; padding:8px; border-radius:5px;">HAPUS</button>
-                        </div>
+                    <div class="acc-body" id="body-${doc.id}">
+                        <b>Paddock:</b> ${d.paddocks.map(p => `${p.name} (${p.luas}Ha)`).join(", ")}<br>
+                        <b>HK/Alat:</b> ${d.hk} / ${d.unit || "-"}<br>
+                        <b>Catatan:</b> ${d.catatan || "-"}<br>
                     </div>
                 </div>`;
             });
@@ -228,49 +198,46 @@
         });
     }
 
-    function toggleAcc(id) { const b = document.getElementById('body-'+id); b.style.display = (b.style.display === 'block') ? 'none' : 'block'; }
-
-    function moveItem(id, dir) {
-        const item = document.getElementById('item-'+id);
-        if(dir === 'up' && item.previousElementSibling) item.parentNode.insertBefore(item, item.previousElementSibling);
-        if(dir === 'down' && item.nextElementSibling) item.parentNode.insertBefore(item.nextElementSibling, item);
-    }
-
     async function loadDashboard() {
         const tgl = document.getElementById('tglDash').value;
+        document.getElementById('labelTglDash').innerText = tgl;
         const snap = await db.collection("reports_v13").where("tgl", "==", tgl).get();
-        let pTotal = 0, rTotal = 0, pHK = 0, rHK = 0;
-        let mapPlan = {}, mapReal = {};
+        let mapP = {}, mapR = {}, mapNote = {};
 
         snap.forEach(doc => {
             const d = doc.data();
             const sumL = d.paddocks.reduce((a, b) => a + (parseFloat(b.luas) || 0), 0);
             const key = d.kegiatan.toLowerCase().trim();
-            if(d.type === 'Planning') { 
-                pTotal += sumL; pHK += d.hk; 
-                mapPlan[key] = (mapPlan[key] || 0) + sumL;
-            } else { 
-                rTotal += sumL; rHK += d.hk;
-                mapReal[key] = (mapReal[key] || 0) + sumL;
+            if(d.type === 'Planning') mapP[key] = (mapP[key] || 0) + sumL;
+            else { 
+                mapR[key] = (mapR[key] || 0) + sumL;
+                if(d.catatan) mapNote[key] = d.catatan;
             }
         });
 
-        document.getElementById('dashPctLuas').innerText = pTotal > 0 ? Math.round(rTotal/pTotal*100) + "%" : "0%";
-        document.getElementById('dashPctHK').innerText = pHK > 0 ? Math.round(rHK/pHK*100) + "%" : "0%";
-
         let html = "";
-        const allKeys = [...new Set([...Object.keys(mapPlan), ...Object.keys(mapReal)])];
+        const allKeys = [...new Set([...Object.keys(mapP), ...Object.keys(mapR)])];
         allKeys.forEach(k => {
-            const p = mapPlan[k] || 0, r = mapReal[k] || 0;
+            const p = mapP[k] || 0, r = mapR[k] || 0;
             const pct = p > 0 ? Math.round(r/p*100) : 100;
             html += `<div class="compare-row">
-                <div style="display:flex; justify-content:space-between;">
-                    <b>${k.toUpperCase()}</b> <span>${r.toFixed(2)} / ${p.toFixed(2)} Ha</span>
+                <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:12px;">
+                    <span>${k.toUpperCase()}</span> <span>${r.toFixed(2)} / ${p.toFixed(2)} Ha (${pct}%)</span>
                 </div>
                 <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(pct, 100)}%; background:${pct < 100 ? 'var(--warning)' : 'var(--success)'}"></div></div>
+                ${mapNote[k] ? `<span class="reason-text">🚩 Catatan: ${mapNote[k]}</span>` : ""}
             </div>`;
         });
-        document.getElementById('listKomparasi').innerHTML = html || "<center>Tidak ada data</center>";
+        document.getElementById('listKomparasi').innerHTML = html || "<center>Belum ada data</center>";
+    }
+
+    async function downloadDashJPG() {
+        const element = document.getElementById("captureArea");
+        const canvas = await html2canvas(element);
+        const link = document.createElement("a");
+        link.download = `Dashboard_Upkeep_${document.getElementById('tglDash').value}.jpg`;
+        link.href = canvas.toDataURL("image/jpeg");
+        link.click();
     }
 
     async function prosesHistory() {
@@ -280,95 +247,44 @@
         if(!s || !e) return alert("Pilih tanggal!");
         
         const q = await db.collection("reports_v13").where("tgl", ">=", s).where("tgl", "<=", e).orderBy("tgl", "desc").get();
-        let html = "";
+        let html = ""; historyGlobal = [];
         q.forEach(doc => {
             const d = doc.data();
             if(f !== "SEMUA" && d.type !== f) return;
+            historyGlobal.push(d);
             const color = d.type === "Planning" ? "var(--blue)" : "var(--success)";
-            html += `<div class="card" style="border-left:5px solid ${color}">
-                <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:5px;">
-                    <b>📅 ${d.tgl}</b> <b style="color:${color}">${d.type.toUpperCase()}</b>
-                </div>
-                <b>📝 ${d.kegiatan}</b><br>
-                📍 Pdk: ${d.paddocks.map(p => `${p.name} (${p.luas}Ha)`).join(", ")}<br>
-                👷 HK: ${d.hk} | 🚜 Alat: ${d.unit || "-"}<br>
-                🧪 Bahan: ${d.bahans.join("; ") || "-"}
+            html += `<div class="card" style="border-left:5px solid ${color}; font-size:11px;">
+                <b>📅 ${d.tgl} [${d.type.toUpperCase()}]</b><br>
+                <b>📝 ${d.kegiatan}</b> | Pdk: ${d.paddocks.map(p => p.name).join(", ")} | HK: ${d.hk}<br>
+                ${d.catatan ? `<span style="color:red">Note: ${d.catatan}</span>` : ""}
             </div>`;
         });
         document.getElementById('hasilRekap').innerHTML = html || "<center>Data tidak ditemukan</center>";
+        document.getElementById('btnDownloadHistory').style.display = historyGlobal.length > 0 ? "block" : "none";
     }
 
-    function salinWA() {
-        const tgl = document.getElementById('tglLaporan').value;
-        const items = document.querySelectorAll('.acc-item');
-        let text = `*LAPORAN UPKEEP ${currentTab.toUpperCase()}*\n📅 *Tgl:* ${tgl}\n\n`;
-        items.forEach((item, i) => {
-            const h = item.querySelector('.acc-header').innerText;
-            const b = item.querySelector('.acc-body').innerText.replace("EDIT", "").replace("HAPUS", "").trim();
-            text += `*${i+1}. ${h.toUpperCase()}*\n${b}\n\n`;
-        });
-        navigator.clipboard.writeText(text); alert("Disalin ke WA!");
-    }
-
-    async function copyToHasil() {
-        const tgl = document.getElementById('tglLaporan').value;
-        const q = await db.collection("reports_v13").where("tgl", "==", tgl).where("type", "==", "Planning").get();
-        if(q.empty) return alert("Planning kosong.");
-        const batch = db.batch();
-        q.forEach(doc => { let d = doc.data(); d.type = "Hasil"; batch.set(db.collection("reports_v13").doc(), d); });
-        await batch.commit(); switchTab('Hasil');
-    }
-
-    function downloadCSV() {
-        const tgl = document.getElementById('tglLaporan').value;
-        let csv = "Kegiatan,Paddock,Luas,HK,Unit,Bahan,Ket\n";
-        document.querySelectorAll('.acc-item').forEach(el => {
-            const h = el.querySelector('.acc-header').innerText;
-            const b = el.querySelector('.acc-body').innerText;
-            csv += `"${h}","${b.replace(/\n/g, " ")}"\n`;
+    function downloadHistoryCSV() {
+        let csv = "Tanggal,Tipe,Kegiatan,Paddock,LuasTotal,HK,Unit,Bahan,Catatan\n";
+        historyGlobal.forEach(d => {
+            const sumL = d.paddocks.reduce((a,b) => a + b.luas, 0);
+            csv += `"${d.tgl}","${d.type}","${d.kegiatan}","${d.paddocks.map(p=>p.name).join(";")}","${sumL}","${d.hk}","${d.unit}","${d.bahans ? d.bahans.join(";") : ""}","${d.catatan || ""}"\n`;
         });
         const blob = new Blob([csv], {type:'text/csv'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Upkeep_${tgl}.csv`; a.click();
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `History_Upkeep_Full.csv`; a.click();
     }
 
-    function editTarik(id) {
-        db.collection("reports_v13").doc(id).get().then(doc => {
-            const d = doc.data(); document.getElementById('editId').value = id;
-            document.getElementById('kegiatan').value = d.kegiatan; document.getElementById('hk').value = d.hk;
-            document.getElementById('unit').value = d.unit; document.getElementById('ket').value = d.ket;
-            document.getElementById('paddockContainer').innerHTML = "";
-            d.paddocks.forEach(p => addRow('paddockContainer', p.name, p.luas));
-            document.getElementById('bahanContainer').innerHTML = "";
-            d.bahans.forEach(b => addRow('bahanContainer', b));
-            document.getElementById('btnUpdate').style.display = "block"; window.scrollTo(0,0);
-        });
-    }
-
-    async function updateData() {
-        const id = document.getElementById('editId').value;
-        const paddocks = Array.from(document.querySelectorAll('.p-name')).map((el, i) => ({
-            name: el.value, luas: parseFloat(document.querySelectorAll('.p-luas')[i].value) || 0
-        })).filter(p => p.name !== "");
-        await db.collection("reports_v13").doc(id).update({
-            kegiatan: document.getElementById('kegiatan').value,
-            paddocks, hk: parseInt(document.getElementById('hk').value) || 0,
-            unit: document.getElementById('unit').value, ket: document.getElementById('ket').value
-        });
-        clearForm();
-    }
-
-    async function hapusSatu(id) { if(confirm("Hapus?")) await db.collection("reports_v13").doc(id).delete(); }
-
-    function clearForm() {
-        document.getElementById('editId').value = ""; document.getElementById('kegiatan').value = "";
-        document.getElementById('hk').value = ""; document.getElementById('unit').value = "";
-        document.getElementById('ket').value = "";
+    function toggleAcc(id) { const b = document.getElementById('body-'+id); b.style.display = (b.style.display === 'block') ? 'none' : 'block'; }
+    function clearForm() { 
+        document.getElementById('kegiatan').value = ""; document.getElementById('hk').value = ""; document.getElementById('unit').value = ""; document.getElementById('catatan').value = "";
         document.getElementById('paddockContainer').innerHTML = `<div class="paddock-row"><input type="text" class="p-name" placeholder="📍 Paddock"><input type="number" class="p-luas" placeholder="📐 Luas (Ha)"></div>`;
         document.getElementById('btnUpdate').style.display = "none";
     }
 
+    // Inisialisasi
     document.getElementById('tglDash').valueAsDate = new Date();
     document.getElementById('tglLaporan').valueAsDate = new Date();
+    document.getElementById('rekapMulai').valueAsDate = new Date();
+    document.getElementById('rekapSelesai').valueAsDate = new Date();
     loadDashboard();
 </script>
 </body>
