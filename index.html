@@ -3,105 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoring Upkeep v2.34 - Stable</title>
+    <title>Monitoring Upkeep v2.36 - Kalkulator Bahan</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root { --primary: #2d5a27; --bg: #f8fafc; --text: #334155; --danger: #ef4444; --success: #22c55e; --blue: #3b82f6; --warning: #f59e0b; }
-        body { font-family: 'Inter', sans-serif; margin: 0; padding: 10px; background: var(--bg); color: var(--text); font-size: 13px; padding-bottom: 120px; }
-        .card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 15px; border: 1px solid #e2e8f0; }
+        body { font-family: 'Inter', sans-serif; margin: 0; padding: 10px; background: var(--bg); color: var(--text); font-size: 12px; padding-bottom: 120px; }
+        .card { background: white; padding: 12px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 12px; border: 1px solid #e2e8f0; }
         
-        .tab-menu { display: flex; gap: 5px; margin-bottom: 10px; overflow-x: auto; }
-        .tab-menu button { flex: 1; padding: 12px; border: none; border-radius: 10px; cursor: pointer; background: #e2e8f0; font-weight: bold; color: #64748b; font-size: 10px; min-width: 90px; }
-        .tab-menu button.active { background: var(--primary); color: white; }
-
-        /* Live Card & Drag Feature */
-        .live-card { background: white; border-radius: 12px; padding: 12px; margin-bottom: 10px; border-left: 5px solid var(--primary); position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .live-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 8px; }
-        .reorder-btns { display: flex; gap: 4px; }
-        .btn-move { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; }
-
-        .paddock-list-detail { background: #f8fafc; padding: 8px; border-radius: 8px; margin: 8px 0; font-size: 11px; border: 1px solid #edf2f7; }
-        .paddock-item { display: flex; justify-content: space-between; border-bottom: 1px dashed #cbd5e1; padding: 2px 0; }
-        .paddock-item:last-child { border: none; }
-
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
-        .stat-small { background: #f1f5f9; padding: 6px; border-radius: 6px; text-align: center; }
+        /* Input Styling */
+        input, select, textarea { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; width: 100%; box-sizing: border-box; margin-bottom: 5px; font-size: 13px; }
+        .row-flex { display: flex; gap: 5px; margin-bottom: 5px; align-items: center; }
         
-        /* Form & Buttons */
-        input, textarea, select { padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; width: 100%; box-sizing: border-box; font-size: 14px; margin-bottom: 8px; }
-        .btn-main { background: var(--primary); color: white; border: none; width: 100%; padding: 15px; border-radius: 12px; font-weight: 800; cursor: pointer; }
+        /* Bahan Section */
+        .bahan-box { background: #fffbeb; padding: 10px; border-radius: 10px; border: 1px solid #fde68a; margin-top: 10px; }
+        .btn-add { background: none; border: 1.5px dashed var(--primary); color: var(--primary); width: 100%; padding: 8px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+        
+        /* Live Card */
+        .live-card { background: white; border-radius: 12px; padding: 12px; margin-bottom: 10px; border-left: 5px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .bahan-list { background: #f0fdf4; padding: 8px; border-radius: 8px; margin-top: 8px; font-size: 11px; border: 1px solid #dcfce7; }
+        
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 8px; }
+        .stat-small { background: #f1f5f9; padding: 5px; border-radius: 6px; text-align: center; border: 1px solid #e2e8f0; }
+        
+        .btn-main { background: var(--primary); color: white; border: none; width: 100%; padding: 15px; border-radius: 12px; font-weight: 800; cursor: pointer; font-size: 14px; }
         .total-footer { position: fixed; bottom: 0; left: 0; right: 0; background: #1e293b; color: white; padding: 15px; text-align: center; font-weight: bold; z-index: 100; border-top: 4px solid var(--primary); }
     </style>
 </head>
 <body>
 
-<div class="card" style="text-align:center; padding:10px;">
-    <h3 style="margin:0; color:var(--primary);">Upkeep Merauke v2.34</h3>
+<div class="card" style="text-align:center;">
+    <h3 style="margin:0; color:var(--primary);">Upkeep v2.36 - Kalkulator Dosis</h3>
 </div>
 
-<div class="tab-menu">
-    <button id="tabDash" class="active" onclick="switchTab('Dash')">📊 DASHBOARD</button>
-    <button id="tabPlanning" onclick="switchTab('Planning')">📋 PLANNING</button>
-    <button id="tabHasil" onclick="switchTab('Hasil')">✅ HASIL</button>
-    <button id="tabRekap" onclick="switchTab('Rekap')">🔎 HISTORY</button>
-</div>
-
-<div id="viewMain" style="display:none;">
+<div id="viewMain">
     <div class="card">
-        <input type="date" id="tglLaporan" onchange="loadData()">
-        <b id="formTitle">Input Data</b>
-        <input type="hidden" id="editId">
-        <input type="text" id="kegiatan" placeholder="Nama Kegiatan">
+        <input type="date" id="tglLaporan">
+        <input type="text" id="kegiatan" placeholder="Nama Kegiatan (Contoh: Spraying Herbisida)">
         
+        <b style="color:var(--primary); font-size:11px;">📍 PADDOCK & LUASAN</b>
         <div id="paddockContainer">
-            <div class="card" style="background:#f1f5f9; padding:10px; margin-bottom:5px; position:relative;">
-                <input type="text" class="p-name" placeholder="Paddock">
-                <input type="number" class="p-luas" placeholder="Luas (Ha)" step="0.01">
+            <div class="row-flex">
+                <input type="text" class="p-name" placeholder="Paddock" style="flex:2">
+                <input type="number" class="p-luas" placeholder="Ha" step="0.01" style="flex:1" oninput="hitungSemuaBahan()">
             </div>
         </div>
-        <button onclick="addRow('paddockContainer')" style="width:100%; padding:8px; margin-bottom:10px; border-radius:10px; border:1px dashed var(--primary);">+ Tambah Paddock</button>
+        <button class="btn-add" onclick="addRowPaddock()">+ TAMBAH PADDOCK</button>
 
-        <div style="display:flex; gap:5px;">
-            <input type="number" id="hk" placeholder="HK">
-            <input type="text" id="unit" placeholder="Unit/Alat">
+        <b style="color:var(--warning); font-size:11px;">🧪 INPUT BAHAN & DOSIS PER HA</b>
+        <div id="bahanContainer" class="bahan-box">
+            </div>
+        <button class="btn-add" style="border-color:orange; color:orange;" onclick="addRowBahan()">+ TAMBAH BAHAN</button>
+
+        <div class="row-flex">
+            <input type="number" id="hk" placeholder="Total HK">
+            <input type="text" id="unit" placeholder="Alat/Unit">
         </div>
-        <textarea id="catatan" placeholder="Catatan/Alasan..."></textarea>
+        <textarea id="catatan" placeholder="Catatan lapangan..."></textarea>
         
-        <button class="btn-main" id="btnSimpan" onclick="simpanData()">💾 SIMPAN DATA</button>
-        <button class="btn-main" id="btnUpdate" style="display:none; background:var(--blue);" onclick="updateData()">🆙 UPDATE DATA</button>
-    </div>
-
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
-        <button onclick="salinWA()" style="background:var(--success); color:white; border:none; padding:12px; border-radius:10px; font-weight:bold;">🟢 SALIN WA</button>
-        <button onclick="copyToHasil()" style="background:var(--blue); color:white; border:none; padding:12px; border-radius:10px; font-weight:bold;">🔄 COPY KE HASIL</button>
+        <button class="btn-main" onclick="simpanData()">💾 SIMPAN LAPORAN</button>
     </div>
 
     <div id="displayList"></div>
 </div>
 
-<div id="viewRekap" style="display:none;">
-    <div class="card">
-        <div style="display:flex; gap:5px; margin-bottom:8px;">
-            <input type="date" id="rekapMulai">
-            <input type="date" id="rekapSelesai">
-        </div>
-        <button class="btn-main" onclick="prosesHistory()">🔎 CARI HISTORY</button>
-        <button id="btnCSV" style="display:none; margin-top:8px; background:#64748b;" class="btn-main" onclick="downloadHistoryCSV()">📂 DOWNLOAD CSV</button>
-    </div>
-    <div id="hasilRekap"></div>
-</div>
-
-<div id="viewDash">
-    <div class="card" style="text-align:center;"><input type="date" id="tglDash" onchange="loadDashboard()"></div>
-    <div id="captureArea"><div class="card" id="listKomparasi"></div></div>
-    <button class="btn-main" style="background:var(--blue);" onclick="downloadDashJPG()">📸 DOWNLOAD JPG</button>
-</div>
-
 <div class="total-footer" id="footerTotalHK">TOTAL HK: 0</div>
 
 <script>
+    // Konfigurasi Firebase Bapak (Tetap sama)
     const firebaseConfig = {
         apiKey: "AIzaSyAgxUFI0NSD-7Ka8ZxFJwkupR6rgb_i00w",
         authDomain: "monitoring-upkeep.firebaseapp.com",
@@ -112,217 +81,115 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    let currentTab = "Dash";
 
-    function switchTab(t) {
-        currentTab = t;
-        document.querySelectorAll('.tab-menu button').forEach(b => b.classList.remove('active'));
-        document.getElementById('tab'+t).classList.add('active');
-        document.getElementById('viewDash').style.display = (t === 'Dash') ? 'block' : 'none';
-        document.getElementById('viewRekap').style.display = (t === 'Rekap') ? 'block' : 'none';
-        document.getElementById('viewMain').style.display = (t === 'Planning' || t === 'Hasil') ? 'block' : 'none';
-        if(t === 'Dash') loadDashboard();
-        if(t === 'Planning' || t === 'Hasil') { document.getElementById('formTitle').innerText = "Input " + t; loadData(); }
+    function addRowPaddock() {
+        const div = document.createElement('div');
+        div.className = 'row-flex';
+        div.innerHTML = `<input type="text" class="p-name" placeholder="Paddock" style="flex:2">
+                         <input type="number" class="p-luas" placeholder="Ha" step="0.01" style="flex:1" oninput="hitungSemuaBahan()">
+                         <button onclick="this.parentElement.remove(); hitungSemuaBahan();" style="border:none; background:none; color:red;">✕</button>`;
+        document.getElementById('paddockContainer').appendChild(div);
     }
 
-    function addRow(id, valN="", valL="") {
+    function addRowBahan(valN="", valD="", valS="L") {
         const div = document.createElement('div');
-        div.className = 'card';
-        div.style = "background:#f1f5f9; padding:10px; margin-bottom:5px; position:relative;";
-        div.innerHTML = `<button onclick="this.parentElement.remove()" style="position:absolute;right:5px;top:5px;border:none;background:red;color:white;border-radius:50%;width:18px;height:18px;font-size:10px;">✕</button>
-            <input type="text" class="p-name" value="${valN}" placeholder="Paddock">
-            <input type="number" class="p-luas" value="${valL}" placeholder="Luas (Ha)" step="0.01">`;
-        document.getElementById(id).appendChild(div);
+        div.className = 'bahan-row';
+        div.style = "border-bottom:1px solid #fde68a; padding-bottom:8px; margin-bottom:8px;";
+        div.innerHTML = `
+            <input type="text" class="b-name" value="${valN}" placeholder="Nama Bahan (Herbi/Pupuk)" oninput="hitungSemuaBahan()">
+            <div class="row-flex">
+                <input type="number" class="b-dosis" value="${valD}" placeholder="Dosis" style="flex:1" oninput="hitungSemuaBahan()">
+                <select class="b-satuan" style="flex:1" onchange="hitungSemuaBahan()">
+                    <option value="L" ${valS=='L'?'selected':''}>L / Ha</option>
+                    <option value="mL" ${valS=='mL'?'selected':''}>mL / Ha</option>
+                    <option value="Kg" ${valS=='Kg'?'selected':''}>Kg / Ha</option>
+                    <option value="G" ${valS=='G'?'selected':''}>G / Ha</option>
+                </select>
+                <div style="flex:1.5; font-size:10px; font-weight:bold; color:var(--primary); text-align:right;">
+                    Tot: <span class="b-total">0</span>
+                </div>
+            </div>`;
+        document.getElementById('bahanContainer').appendChild(div);
+    }
+
+    function hitungSemuaBahan() {
+        const luasan = Array.from(document.querySelectorAll('.p-luas')).reduce((a, b) => a + (parseFloat(b.value) || 0), 0);
+        const rows = document.querySelectorAll('.bahan-row');
+        rows.forEach(row => {
+            const dosis = parseFloat(row.querySelector('.b-dosis').value) || 0;
+            const satuan = row.querySelector('.b-satuan').value;
+            const total = (luasan * dosis).toFixed(2);
+            row.querySelector('.b-total').innerText = `${total} ${satuan.replace('/ Ha', '')}`;
+        });
     }
 
     async function simpanData() {
         const tgl = document.getElementById('tglLaporan').value;
         const kegiatan = document.getElementById('kegiatan').value;
-        if(!kegiatan) return alert("Kegiatan Kosong!");
-
         const paddocks = Array.from(document.querySelectorAll('.p-name')).map((el, i) => ({
             name: el.value, luas: parseFloat(document.querySelectorAll('.p-luas')[i].value) || 0
         })).filter(p => p.name !== "");
+        
+        const bahans = Array.from(document.querySelectorAll('.bahan-row')).map(row => ({
+            nama: row.querySelector('.b-name').value,
+            dosis: row.querySelector('.b-dosis').value,
+            satuan: row.querySelector('.b-satuan').value,
+            total: row.querySelector('.b-total').innerText
+        })).filter(b => b.nama !== "");
 
         await db.collection("reports_v13").add({
-            tgl, type: currentTab, kegiatan, paddocks,
+            tgl, type: "Hasil", kegiatan, paddocks, bahans,
             hk: parseInt(document.getElementById('hk').value) || 0,
             unit: document.getElementById('unit').value,
             catatan: document.getElementById('catatan').value,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-        clearForm();
+        location.reload(); // Refresh untuk clear
     }
 
     function loadData() {
         const tgl = document.getElementById('tglLaporan').value;
-        db.collection("reports_v13").where("tgl", "==", tgl).where("type", "==", currentTab).onSnapshot(snap => {
-            let html = ""; let totalHK = 0;
+        db.collection("reports_v13").where("tgl", "==", tgl).onSnapshot(snap => {
+            let html = "";
             snap.forEach(doc => {
-                const d = doc.data(); totalHK += (d.hk || 0);
+                const d = doc.data();
                 const sumL = d.paddocks.reduce((a, b) => a + b.luas, 0);
+                const eff = sumL > 0 ? (d.hk / sumL).toFixed(2) : 0;
                 
                 html += `
-                <div class="live-card" id="card-${doc.id}">
-                    <div class="live-header">
-                        <b style="text-transform:uppercase;">${d.kegiatan}</b>
-                        <div class="reorder-btns">
-                            <button class="btn-move" onclick="moveCard('${doc.id}', 'up')">▲</button>
-                            <button class="btn-move" onclick="moveCard('${doc.id}', 'down')">▼</button>
-                        </div>
+                <div class="live-card">
+                    <div style="display:flex; justify-content:space-between;">
+                        <b style="color:var(--primary);">${d.kegiatan.toUpperCase()}</b>
+                        <small style="font-weight:bold;">${sumL.toFixed(2)} Ha</small>
                     </div>
-                    <div class="paddock-list-detail">
-                        <b>Rincian Paddock:</b>
-                        ${d.paddocks.map(p => `<div class="paddock-item"><span>📍 ${p.name}</span> <b>${p.luas} Ha</b></div>`).join("")}
-                        <div style="text-align:right; border-top:1px solid #cbd5e1; margin-top:4px; font-weight:800;">Total: ${sumL.toFixed(2)} Ha</div>
+                    <div style="font-size:10px; color:#64748b; margin-bottom:5px;">📍 ${d.paddocks.map(p => p.name).join(", ")}</div>
+                    
+                    <div class="bahan-list">
+                        <b>🧪 Pemakaian Bahan:</b><br>
+                        ${d.bahans ? d.bahans.map(b => `• ${b.nama}: ${b.dosis} ${b.satuan} (Total: ${b.total})`).join("<br>") : "-"}
                     </div>
+
                     <div class="stat-grid">
                         <div class="stat-small"><small>HK</small><br><b>${d.hk}</b></div>
                         <div class="stat-small"><small>ALAT</small><br><b>${d.unit || "-"}</b></div>
+                        <div class="stat-small" style="background:#fffbeb;"><small>HK/Ha</small><br><b>${eff}</b></div>
                     </div>
-                    ${d.catatan ? `<div style="color:red; font-size:10px; margin-top:5px;">🚩 ${d.catatan}</div>` : ""}
-                    <div style="display:flex; justify-content:flex-end; gap:5px; margin-top:10px;">
-                        <button onclick="editTarik('${doc.id}')" style="background:var(--blue); color:white; border:none; padding:5px 12px; border-radius:6px; font-size:10px;">EDIT</button>
-                        <button onclick="hapusSatu('${doc.id}')" style="background:var(--danger); color:white; border:none; padding:5px 8px; border-radius:6px; font-size:10px;">✕</button>
+                    <div style="text-align:right; margin-top:10px;">
+                        <button onclick="hapusSatu('${doc.id}')" style="border:none; background:#fee2e2; color:red; padding:5px 10px; border-radius:6px; font-size:10px;">Hapus</button>
                     </div>
                 </div>`;
             });
             document.getElementById('displayList').innerHTML = html;
-            document.getElementById('footerTotalHK').innerText = `TOTAL HK ${currentTab.toUpperCase()}: ${totalHK}`;
         });
     }
 
-    function moveCard(id, dir) {
-        const card = document.getElementById('card-'+id);
-        if(dir === 'up' && card.previousElementSibling) card.parentNode.insertBefore(card, card.previousElementSibling);
-        if(dir === 'down' && card.nextElementSibling) card.parentNode.insertBefore(card.nextElementSibling, card);
-    }
+    async function hapusSatu(id) { if(confirm("Hapus data?")) await db.collection("reports_v13").doc(id).delete(); }
 
-    async function salinWA() {
-        const tgl = document.getElementById('tglLaporan').value;
-        const cards = document.querySelectorAll('.live-card');
-        let text = `*LAPORAN UPKEEP ${currentTab.toUpperCase()}*\n📅 Tanggal: ${tgl}\n\n`;
-        
-        cards.forEach((c, i) => {
-            const title = c.querySelector('b').innerText;
-            const paddocks = Array.from(c.querySelectorAll('.paddock-item')).map(p => p.innerText).join("\n");
-            const stats = Array.from(c.querySelectorAll('.stat-small b')).map(s => s.innerText);
-            text += `*${i+1}. ${title}*\n${paddocks}\n👷 HK: ${stats[0]} | 🚜 Unit: ${stats[1]}\n\n`;
-        });
-        
-        await navigator.clipboard.writeText(text);
-        alert("Laporan Berhasil Disalin ke WA!");
-    }
-
-    async function copyToHasil() {
-        const tgl = document.getElementById('tglLaporan').value;
-        const snap = await db.collection("reports_v13").where("tgl", "==", tgl).where("type", "==", "Planning").get();
-        if(snap.empty) return alert("Data Planning hari ini tidak ditemukan!");
-        
-        const batch = db.batch();
-        snap.forEach(doc => {
-            const data = doc.data();
-            data.type = "Hasil";
-            data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
-            batch.set(db.collection("reports_v13").doc(), data);
-        });
-        await batch.commit();
-        alert("Data Planning Berhasil di-Copy ke Hasil!");
-        switchTab('Hasil');
-    }
-
-    async function prosesHistory() {
-        const s = document.getElementById('rekapMulai').value;
-        const e = document.getElementById('rekapSelesai').value;
-        const q = await db.collection("reports_v13").where("tgl", ">=", s).where("tgl", "<=", e).orderBy("tgl", "desc").get();
-        let html = "";
-        q.forEach(doc => {
-            const d = doc.data();
-            const sumL = d.paddocks.reduce((a, b) => a + b.luas, 0);
-            html += `<div class="card" style="border-left:5px solid ${d.type==='Planning'?'#3b82f6':'#22c55e'}">
-                <small>${d.tgl} [${d.type}]</small><br><b>${d.kegiatan}</b><br>
-                Pdk: ${d.paddocks.map(p => p.name).join(", ")} | Luas: ${sumL.toFixed(2)} Ha | HK: ${d.hk}
-            </div>`;
-        });
-        document.getElementById('hasilRekap').innerHTML = html || "<center>Data Kosong</center>";
-        document.getElementById('btnCSV').style.display = q.empty ? "none" : "block";
-    }
-
-    async function loadDashboard() {
-        const tgl = document.getElementById('tglDash').value;
-        const snap = await db.collection("reports_v13").where("tgl", "==", tgl).get();
-        let pMap = {}, rMap = {}, nMap = {};
-        snap.forEach(doc => {
-            const d = doc.data();
-            const sumL = d.paddocks.reduce((a, b) => a + b.luas, 0);
-            const key = d.kegiatan.toLowerCase().trim();
-            if(d.type === 'Planning') pMap[key] = (pMap[key] || 0) + sumL;
-            else { rMap[key] = (rMap[key] || 0) + sumL; if(d.catatan) nMap[key] = d.catatan; }
-        });
-        let html = `<b>CAPAIAN TANGGAL: ${tgl}</b><br>`;
-        const keys = [...new Set([...Object.keys(pMap), ...Object.keys(rMap)])];
-        keys.forEach(k => {
-            const p = pMap[k] || 0, r = rMap[k] || 0;
-            const pct = p > 0 ? Math.round(r/p*100) : 100;
-            html += `<div style="margin-top:10px; border-bottom:1px solid #eee;">
-                <div style="display:flex; justify-content:space-between; font-weight:bold;"><span>${k.toUpperCase()}</span><span>${pct}%</span></div>
-                <div style="background:#e2e8f0; height:8px; border-radius:4px; overflow:hidden;">
-                    <div style="background:${pct<100?'orange':'green'}; width:${Math.min(pct,100)}%; height:100%;"></div>
-                </div>
-                <small>${r.toFixed(2)} / ${p.toFixed(2)} Ha</small> ${nMap[k] ? `<br><small style="color:red">🚩 ${nMap[k]}</small>` : ""}
-            </div>`;
-        });
-        document.getElementById('listKomparasi').innerHTML = html;
-    }
-
-    async function downloadDashJPG() {
-        const canvas = await html2canvas(document.getElementById("captureArea"));
-        const link = document.createElement("a");
-        link.download = `Dashboard_${document.getElementById('tglDash').value}.jpg`;
-        link.href = canvas.toDataURL("image/jpeg");
-        link.click();
-    }
-
-    function editTarik(id) {
-        db.collection("reports_v13").doc(id).get().then(doc => {
-            const d = doc.data(); document.getElementById('editId').value = id;
-            document.getElementById('kegiatan').value = d.kegiatan; document.getElementById('hk').value = d.hk;
-            document.getElementById('unit').value = d.unit; document.getElementById('catatan').value = d.catatan || "";
-            document.getElementById('paddockContainer').innerHTML = "";
-            d.paddocks.forEach(p => addRow('paddockContainer', p.name, p.luas));
-            document.getElementById('btnUpdate').style.display = "block"; document.getElementById('btnSimpan').style.display = "none";
-            window.scrollTo(0,0);
-        });
-    }
-
-    async function updateData() {
-        const id = document.getElementById('editId').value;
-        const paddocks = Array.from(document.querySelectorAll('.p-name')).map((el, i) => ({
-            name: el.value, luas: parseFloat(document.querySelectorAll('.p-luas')[i].value) || 0
-        })).filter(p => p.name !== "");
-        await db.collection("reports_v13").doc(id).update({
-            kegiatan: document.getElementById('kegiatan').value, paddocks, 
-            hk: parseInt(document.getElementById('hk').value) || 0,
-            unit: document.getElementById('unit').value, catatan: document.getElementById('catatan').value
-        });
-        clearForm();
-    }
-
-    async function hapusSatu(id) { if(confirm("Hapus?")) await db.collection("reports_v13").doc(id).delete(); }
-
-    function clearForm() {
-        document.getElementById('editId').value = ""; document.getElementById('kegiatan').value = "";
-        document.getElementById('hk').value = ""; document.getElementById('unit').value = ""; document.getElementById('catatan').value = "";
-        document.getElementById('paddockContainer').innerHTML = `<div class="card" style="background:#f1f5f9; padding:10px; margin-bottom:5px; position:relative;"><input type="text" class="p-name" placeholder="Paddock"><input type="number" class="p-luas" placeholder="Luas (Ha)" step="0.01"></div>`;
-        document.getElementById('btnUpdate').style.display = "none"; document.getElementById('btnSimpan').style.display = "block";
-    }
-
+    // Init
     const tdy = new Date().toISOString().split('T')[0];
     document.getElementById('tglLaporan').value = tdy;
-    document.getElementById('tglDash').value = tdy;
-    document.getElementById('rekapMulai').value = tdy;
-    document.getElementById('rekapSelesai').value = tdy;
-    switchTab('Dash');
+    addRowBahan(); // Munculkan 1 row bahan default
+    loadData();
 </script>
 </body>
 </html>
