@@ -3,43 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoring Upkeep v2.31</title>
+    <title>Monitoring Upkeep v2.33</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        :root { --primary: #2d5a27; --accent: #6b8e23; --bg: #f8fafc; --text: #334155; --danger: #ef4444; --success: #22c55e; --warning: #f59e0b; --blue: #3b82f6; }
+        :root { --primary: #2d5a27; --bg: #f8fafc; --text: #334155; --danger: #ef4444; --success: #22c55e; --blue: #3b82f6; --warning: #f59e0b; }
         body { font-family: 'Inter', sans-serif; margin: 0; padding: 10px; background: var(--bg); color: var(--text); font-size: 13px; padding-bottom: 100px; }
-        .header { background: white; padding: 15px; text-align: center; border-radius: 15px; margin-bottom: 10px; border-bottom: 3px solid var(--primary); }
+        .header { background: white; padding: 15px; text-align: center; border-radius: 15px; margin-bottom: 10px; border-bottom: 3px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
         .tab-menu { display: flex; gap: 5px; margin-bottom: 10px; overflow-x: auto; padding: 5px 0; }
-        .tab-menu button { flex: 1; padding: 10px; border: none; border-radius: 10px; cursor: pointer; background: #e2e8f0; font-weight: bold; color: #64748b; font-size: 10px; }
+        .tab-menu button { flex: 1; padding: 10px; border: none; border-radius: 10px; cursor: pointer; background: #e2e8f0; font-weight: bold; color: #64748b; font-size: 10px; min-width: 85px; }
         .tab-menu button.active { background: var(--primary); color: white; }
-        .card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 15px; }
         
-        /* Dashboard & Progress */
-        .dash-card { background: white; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid #e2e8f0; }
-        .compare-row { padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
-        .progress-bar { background: #e2e8f0; border-radius: 5px; height: 8px; margin-top: 5px; overflow: hidden; }
+        .card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 15px; border: 1px solid #e2e8f0; }
+
+        /* Dashboard Styles */
+        .compare-row { padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
+        .progress-bar { background: #e2e8f0; border-radius: 5px; height: 10px; margin-top: 6px; overflow: hidden; }
         .progress-fill { background: var(--success); height: 100%; transition: width 0.5s; }
-        .reason-text { font-size: 10px; color: #ef4444; font-style: italic; margin-top: 3px; display: block; }
+        .reason-text { font-size: 10px; color: var(--danger); font-style: italic; margin-top: 4px; display: block; font-weight: 500; }
 
-        /* Form */
+        /* Live Input List Cards (The Requested Feature) */
+        .live-card { background: #ffffff; border-radius: 12px; padding: 12px; margin-bottom: 10px; border-left: 5px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .live-card-header { display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 8px; }
+        .live-title { font-weight: 800; color: #1e293b; font-size: 13px; text-transform: uppercase; }
+        .live-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+        .stat-box { background: #f8fafc; padding: 6px; border-radius: 8px; text-align: center; border: 1px solid #f1f5f9; }
+        .stat-label { display: block; font-size: 8px; color: #64748b; font-weight: bold; text-transform: uppercase; }
+        .stat-val { font-size: 11px; font-weight: 700; color: var(--primary); }
+        .live-footer { margin-top: 10px; display: flex; justify-content: flex-end; gap: 8px; }
+        .btn-edit-small { background: var(--blue); color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; }
+        .btn-del-small { background: var(--danger); color: white; border: none; padding: 6px 10px; border-radius: 6px; font-size: 10px; cursor: pointer; }
+
+        /* Form Inputs */
         .row { display: flex; gap: 8px; margin-bottom: 8px; }
-        .paddock-row { display: flex; flex-direction: column; gap: 5px; background: #f1f5f9; padding: 10px; border-radius: 10px; margin-bottom: 8px; position: relative; }
-        input, textarea, select { padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; outline: none; box-sizing: border-box; width: 100%; }
-        .btn-main { background: var(--primary); color: white; border: none; width: 100%; padding: 15px; border-radius: 12px; font-weight: 700; cursor: pointer; }
+        .paddock-row { background: #f1f5f9; padding: 10px; border-radius: 10px; margin-bottom: 8px; position: relative; }
+        input, textarea, select { padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; width: 100%; box-sizing: border-box; font-size: 14px; outline: none; }
+        .btn-main { background: var(--primary); color: white; border: none; width: 100%; padding: 15px; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 14px; }
         
-        .acc-item { background: white; margin-bottom: 8px; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; }
-        .acc-header { padding: 12px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; }
-        .acc-body { padding: 12px; display: none; border-top: 1px solid #eee; font-size: 12px; }
-
         .total-footer { position: fixed; bottom: 0; left: 0; right: 0; background: #1e293b; color: white; padding: 15px; text-align: center; font-weight: bold; z-index: 100; border-top: 3px solid var(--primary); }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <h2 style="margin:0; color: var(--primary); font-size: 18px;">Monitoring Upkeep v2.31</h2>
+    <h2 style="margin:0; color: var(--primary); font-size: 18px;">Upkeep Monitoring v2.33</h2>
 </div>
 
 <div class="tab-menu">
@@ -51,14 +60,13 @@
 
 <div id="viewDash">
     <div class="card" style="text-align:center;">
-        <input type="date" id="tglDash" onchange="loadDashboard()" style="border:none; font-weight:bold; color:var(--primary); width:auto;">
+        <input type="date" id="tglDash" onchange="loadDashboard()" style="border:none; font-weight:bold; color:var(--primary); width:auto; font-size: 16px;">
     </div>
-    
     <div id="captureArea">
         <div class="card">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <b style="color:var(--primary)">PRODUKTIVITAS PER KEGIATAN</b>
-                <span id="labelTglDash" style="font-size:10px; font-weight:bold;"></span>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <b style="color:var(--primary)">CAPAIAN PER KEGIATAN</b>
+                <span id="labelTglDash" style="font-size:11px; font-weight:bold; color:#64748b;"></span>
             </div>
             <div id="listKomparasi"></div>
         </div>
@@ -67,48 +75,52 @@
 </div>
 
 <div id="viewMain" style="display:none;">
-    <div class="card" style="text-align:center;"><input type="date" id="tglLaporan" onchange="loadData()" style="border:none; font-weight:bold; color:var(--primary); width:auto;"></div>
+    <div class="card" style="text-align:center;">
+        <input type="date" id="tglLaporan" onchange="loadData()" style="border:none; font-weight:bold; color:var(--primary); width:auto; font-size: 16px;">
+    </div>
 
     <div class="card">
-        <b id="formTitle">Input Data</b>
+        <b id="formTitle" style="color:var(--primary)">Input Data</b>
         <input type="hidden" id="editId">
         <input type="text" id="kegiatan" placeholder="📝 Nama Kegiatan" style="margin-top:10px;">
         
         <div id="paddockContainer" style="margin-top:10px;">
             <div class="paddock-row">
                 <input type="text" class="p-name" placeholder="📍 Paddock">
-                <input type="number" class="p-luas" placeholder="📐 Luas (Ha)" step="0.01">
+                <input type="number" class="p-luas" placeholder="📐 Luas (Ha)" step="0.01" style="margin-top:5px;">
             </div>
         </div>
-        <button onclick="addRow('paddockContainer')" style="background:none; border:1px dashed var(--primary); color:var(--primary); width:100%; padding:8px; border-radius:10px; margin-bottom:10px;">+ Paddock</button>
+        <button onclick="addRow('paddockContainer')" style="background:none; border:1px dashed var(--primary); color:var(--primary); width:100%; padding:10px; border-radius:10px; margin-bottom:12px; font-weight:bold;">+ TAMBAH PADDOCK</button>
 
-        <div class="row"><input type="number" id="hk" placeholder="👷 HK"><input type="text" id="unit" placeholder="🚜 Alat"></div>
-        <div id="bahanContainer"><div class="row"><input type="text" class="b-name" placeholder="🧪 Bahan"></div></div>
-        <button onclick="addRow('bahanContainer')" style="background:none; border:1px dashed var(--primary); color:var(--primary); width:100%; padding:8px; border-radius:10px; margin-bottom:10px;">+ Bahan</button>
+        <div class="row">
+            <input type="number" id="hk" placeholder="👷 HK (Org)">
+            <input type="text" id="unit" placeholder="🚜 Kode Alat">
+        </div>
         
-        <textarea id="catatan" placeholder="🚩 Catatan / Alasan (Jika target tidak tercapai)" rows="2" style="margin-bottom:10px; border:1px solid var(--danger);"></textarea>
-        <button class="btn-main" onclick="simpanData()">💾 SIMPAN DATA</button>
-        <button id="btnUpdate" style="display:none; background:var(--blue); color:white; width:100%; padding:15px; border-radius:12px; margin-top:5px; border:none;" onclick="updateData()">🆙 UPDATE DATA</button>
+        <textarea id="catatan" placeholder="🚩 Catatan / Alasan jika target meleset..." rows="2" style="margin-bottom:10px; border:1px solid #fecaca;"></textarea>
+        
+        <button class="btn-main" onclick="simpanData()" id="btnSimpan">💾 SIMPAN DATA</button>
+        <button id="btnUpdate" style="display:none; background:var(--blue); color:white; width:100%; padding:15px; border-radius:12px; margin-top:5px; border:none; font-weight:bold;" onclick="updateData()">🆙 PERBARUI DATA</button>
     </div>
 
-    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:5px; margin-bottom:10px;">
-        <button onclick="salinWA()" style="background:var(--success); color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; font-size:10px;">SALIN WA</button>
-        <button onclick="copyToHasil()" style="background:var(--blue); color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; font-size:10px;">KE HASIL</button>
-        <button onclick="hapusSemuaHariIni()" style="background:var(--danger); color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; font-size:10px;">HAPUS</button>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:15px;">
+        <button onclick="salinWA()" style="background:var(--success); color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; font-size:11px;">🟢 SALIN WA</button>
+        <button onclick="copyToHasil()" style="background:var(--blue); color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; font-size:11px;">🔄 COPY KE HASIL</button>
     </div>
+
     <div id="displayList"></div>
 </div>
 
 <div id="viewRekap" style="display:none;">
     <div class="card">
         <div class="row"><input type="date" id="rekapMulai"><input type="date" id="rekapSelesai"></div>
-        <select id="filterType" style="margin-bottom:10px;">
-            <option value="SEMUA">SEMUA DATA</option>
+        <select id="filterType" style="margin-bottom:10px; font-weight:bold;">
+            <option value="SEMUA">SEMUA KATEGORI</option>
             <option value="Planning">PLANNING</option>
             <option value="Hasil">HASIL</option>
         </select>
-        <button class="btn-main" onclick="prosesHistory()">🔎 CARI HISTORY</button>
-        <button id="btnDownloadHistory" style="display:none; background:#64748b; color:white; border:none; width:100%; padding:12px; border-radius:12px; font-weight:bold; margin-top:8px;" onclick="downloadHistoryCSV()">📂 DOWNLOAD CSV HISTORY</button>
+        <button class="btn-main" onclick="prosesHistory()">🔎 CARI DATA HISTORY</button>
+        <button id="btnDownloadHistory" style="display:none; background:#64748b; color:white; border:none; width:100%; padding:12px; border-radius:12px; font-weight:bold; margin-top:10px;" onclick="downloadHistoryCSV()">📂 DOWNLOAD CSV FULL</button>
     </div>
     <div id="hasilRekap"></div>
 </div>
@@ -127,7 +139,6 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     let currentTab = "Dash";
-    let historyGlobal = [];
 
     function switchTab(t) {
         currentTab = t;
@@ -142,15 +153,10 @@
 
     function addRow(id, valName="", valLuas="") {
         const div = document.createElement('div');
-        if(id === 'paddockContainer') {
-            div.className = 'paddock-row';
-            div.innerHTML = `<button onclick="this.parentElement.remove()" style="position:absolute;right:5px;top:5px;border:none;background:red;color:white;border-radius:50%;width:18px;height:18px;font-size:10px;">✕</button>
-                <input type="text" class="p-name" value="${valName}" placeholder="📍 Paddock">
-                <input type="number" class="p-luas" value="${valLuas}" placeholder="📐 Luas (Ha)" step="0.01">`;
-        } else {
-            div.className = 'row';
-            div.innerHTML = `<input type="text" class="b-name" value="${valName}" placeholder="🧪 Bahan"><button onclick="this.parentElement.remove()" style="border:none;background:none;color:red;">✕</button>`;
-        }
+        div.className = 'paddock-row';
+        div.innerHTML = `<button onclick="this.parentElement.remove()" style="position:absolute;right:8px;top:8px;border:none;background:red;color:white;border-radius:50%;width:20px;height:20px;font-size:12px;">✕</button>
+            <input type="text" class="p-name" value="${valName}" placeholder="📍 Nama Paddock">
+            <input type="number" class="p-luas" value="${valLuas}" placeholder="📐 Luas (Ha)" step="0.01" style="margin-top:5px;">`;
         document.getElementById(id).appendChild(div);
     }
 
@@ -160,40 +166,45 @@
             name: el.value, luas: parseFloat(document.querySelectorAll('.p-luas')[i].value) || 0
         })).filter(p => p.name !== "");
         
-        const payload = {
+        if(!document.getElementById('kegiatan').value) return alert("Nama kegiatan wajib diisi!");
+
+        await db.collection("reports_v13").add({
             tgl, type: currentTab, kegiatan: document.getElementById('kegiatan').value,
-            paddocks, bahans: Array.from(document.querySelectorAll('.b-name')).map(el => el.value).filter(b => b !== ""),
-            hk: parseInt(document.getElementById('hk').value) || 0, unit: document.getElementById('unit').value,
-            catatan: document.getElementById('catatan').value, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        if(!payload.kegiatan) return alert("Isi Kegiatan!");
-        await db.collection("reports_v13").add(payload);
+            paddocks, hk: parseInt(document.getElementById('hk').value) || 0,
+            unit: document.getElementById('unit').value, catatan: document.getElementById('catatan').value,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
         clearForm();
     }
 
     function loadData() {
         const tgl = document.getElementById('tglLaporan').value;
         db.collection("reports_v13").where("tgl", "==", tgl).where("type", "==", currentTab).onSnapshot(snap => {
-            let listHtml = "", totalHK = 0;
+            let html = ""; let totalHK = 0;
             snap.forEach(doc => {
                 const d = doc.data(); totalHK += (d.hk || 0);
                 const sumL = d.paddocks.reduce((a, b) => a + (parseFloat(b.luas) || 0), 0);
-                listHtml += `<div class="acc-item">
-                    <div class="acc-header" onclick="toggleAcc('${doc.id}')">
-                        <span>📝 ${d.kegiatan} (${sumL.toFixed(2)} Ha)</span>
-                        <div style="display:flex; gap:5px;">
-                            <button onclick="editTarik('${doc.id}')" style="background:var(--blue); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:10px;">EDIT</button>
-                            <button onclick="hapusSatu('${doc.id}')" style="background:var(--danger); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:10px;">✕</button>
+                html += `
+                <div class="live-card">
+                    <div class="live-card-header">
+                        <div>
+                            <div class="live-title">${d.kegiatan}</div>
+                            <div style="font-size:10px; color:#64748b; margin-top:3px;">📍 ${d.paddocks.map(p => p.name).join(", ")}</div>
                         </div>
                     </div>
-                    <div class="acc-body" id="body-${doc.id}">
-                        <b>Paddock:</b> ${d.paddocks.map(p => `${p.name} (${p.luas}Ha)`).join(", ")}<br>
-                        <b>HK/Alat:</b> ${d.hk} / ${d.unit || "-"}<br>
-                        <b>Catatan:</b> ${d.catatan || "-"}<br>
+                    <div class="live-stats">
+                        <div class="stat-box"><span class="stat-label">LUAS</span><span class="stat-val">${sumL.toFixed(2)} Ha</span></div>
+                        <div class="stat-box"><span class="stat-label">HK</span><span class="stat-val">${d.hk}</span></div>
+                        <div class="stat-box"><span class="stat-label">ALAT</span><span class="stat-val">${d.unit || "-"}</span></div>
+                    </div>
+                    ${d.catatan ? `<div class="reason-text">🚩 ${d.catatan}</div>` : ""}
+                    <div class="live-footer">
+                        <button class="btn-edit-small" onclick="editTarik('${doc.id}')">EDIT</button>
+                        <button class="btn-del-small" onclick="hapusSatu('${doc.id}')">✕</button>
                     </div>
                 </div>`;
             });
-            document.getElementById('displayList').innerHTML = listHtml;
+            document.getElementById('displayList').innerHTML = html || "<center style='color:#94a3b8; padding:20px;'>Belum ada data input.</center>";
             document.getElementById('footerTotalHK').innerText = `TOTAL HK ${currentTab.toUpperCase()}: ${totalHK} 👷`;
         });
     }
@@ -221,70 +232,77 @@
             const p = mapP[k] || 0, r = mapR[k] || 0;
             const pct = p > 0 ? Math.round(r/p*100) : 100;
             html += `<div class="compare-row">
-                <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:12px;">
-                    <span>${k.toUpperCase()}</span> <span>${r.toFixed(2)} / ${p.toFixed(2)} Ha (${pct}%)</span>
+                <div style="display:flex; justify-content:space-between; font-weight:bold;">
+                    <span style="text-transform:uppercase; font-size:12px;">${k}</span> 
+                    <span style="font-size:12px;">${r.toFixed(2)} / ${p.toFixed(2)} Ha (${pct}%)</span>
                 </div>
                 <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(pct, 100)}%; background:${pct < 100 ? 'var(--warning)' : 'var(--success)'}"></div></div>
-                ${mapNote[k] ? `<span class="reason-text">🚩 Catatan: ${mapNote[k]}</span>` : ""}
+                ${mapNote[k] ? `<span class="reason-text">🚩 Note: ${mapNote[k]}</span>` : ""}
             </div>`;
         });
-        document.getElementById('listKomparasi').innerHTML = html || "<center>Belum ada data</center>";
+        document.getElementById('listKomparasi').innerHTML = html || "<center style='padding:20px;'>Tidak ada data perbandingan.</center>";
     }
 
     async function downloadDashJPG() {
-        const element = document.getElementById("captureArea");
-        const canvas = await html2canvas(element);
+        const canvas = await html2canvas(document.getElementById("captureArea"));
         const link = document.createElement("a");
-        link.download = `Dashboard_Upkeep_${document.getElementById('tglDash').value}.jpg`;
+        link.download = `Capaian_Upkeep_${document.getElementById('tglDash').value}.jpg`;
         link.href = canvas.toDataURL("image/jpeg");
         link.click();
     }
 
-    async function prosesHistory() {
-        const s = document.getElementById('rekapMulai').value;
-        const e = document.getElementById('rekapSelesai').value;
-        const f = document.getElementById('filterType').value;
-        if(!s || !e) return alert("Pilih tanggal!");
-        
-        const q = await db.collection("reports_v13").where("tgl", ">=", s).where("tgl", "<=", e).orderBy("tgl", "desc").get();
-        let html = ""; historyGlobal = [];
+    async function downloadHistoryCSV() {
+        let csv = "Tanggal,Tipe,Kegiatan,Paddock,TotalLuas,HK,Unit,Catatan\n";
+        const q = await db.collection("reports_v13").where("tgl", ">=", document.getElementById('rekapMulai').value).where("tgl", "<=", document.getElementById('rekapSelesai').value).get();
         q.forEach(doc => {
             const d = doc.data();
-            if(f !== "SEMUA" && d.type !== f) return;
-            historyGlobal.push(d);
-            const color = d.type === "Planning" ? "var(--blue)" : "var(--success)";
-            html += `<div class="card" style="border-left:5px solid ${color}; font-size:11px;">
-                <b>📅 ${d.tgl} [${d.type.toUpperCase()}]</b><br>
-                <b>📝 ${d.kegiatan}</b> | Pdk: ${d.paddocks.map(p => p.name).join(", ")} | HK: ${d.hk}<br>
-                ${d.catatan ? `<span style="color:red">Note: ${d.catatan}</span>` : ""}
-            </div>`;
-        });
-        document.getElementById('hasilRekap').innerHTML = html || "<center>Data tidak ditemukan</center>";
-        document.getElementById('btnDownloadHistory').style.display = historyGlobal.length > 0 ? "block" : "none";
-    }
-
-    function downloadHistoryCSV() {
-        let csv = "Tanggal,Tipe,Kegiatan,Paddock,LuasTotal,HK,Unit,Bahan,Catatan\n";
-        historyGlobal.forEach(d => {
             const sumL = d.paddocks.reduce((a,b) => a + b.luas, 0);
-            csv += `"${d.tgl}","${d.type}","${d.kegiatan}","${d.paddocks.map(p=>p.name).join(";")}","${sumL}","${d.hk}","${d.unit}","${d.bahans ? d.bahans.join(";") : ""}","${d.catatan || ""}"\n`;
+            csv += `"${d.tgl}","${d.type}","${d.kegiatan}","${d.paddocks.map(p=>p.name).join(";")}","${sumL}","${d.hk}","${d.unit}","${d.catatan || ""}"\n`;
         });
         const blob = new Blob([csv], {type:'text/csv'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `History_Upkeep_Full.csv`; a.click();
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "Rekap_Upkeep_Full.csv"; a.click();
     }
 
-    function toggleAcc(id) { const b = document.getElementById('body-'+id); b.style.display = (b.style.display === 'block') ? 'none' : 'block'; }
-    function clearForm() { 
-        document.getElementById('kegiatan').value = ""; document.getElementById('hk').value = ""; document.getElementById('unit').value = ""; document.getElementById('catatan').value = "";
-        document.getElementById('paddockContainer').innerHTML = `<div class="paddock-row"><input type="text" class="p-name" placeholder="📍 Paddock"><input type="number" class="p-luas" placeholder="📐 Luas (Ha)"></div>`;
-        document.getElementById('btnUpdate').style.display = "none";
+    function editTarik(id) {
+        db.collection("reports_v13").doc(id).get().then(doc => {
+            const d = doc.data(); document.getElementById('editId').value = id;
+            document.getElementById('kegiatan').value = d.kegiatan; document.getElementById('hk').value = d.hk;
+            document.getElementById('unit').value = d.unit; document.getElementById('catatan').value = d.catatan || "";
+            document.getElementById('paddockContainer').innerHTML = "";
+            d.paddocks.forEach(p => addRow('paddockContainer', p.name, p.luas));
+            document.getElementById('btnUpdate').style.display = "block"; document.getElementById('btnSimpan').style.display = "none";
+            window.scrollTo(0,0);
+        });
     }
 
-    // Inisialisasi
-    document.getElementById('tglDash').valueAsDate = new Date();
-    document.getElementById('tglLaporan').valueAsDate = new Date();
-    document.getElementById('rekapMulai').valueAsDate = new Date();
-    document.getElementById('rekapSelesai').valueAsDate = new Date();
+    async function updateData() {
+        const id = document.getElementById('editId').value;
+        const paddocks = Array.from(document.querySelectorAll('.p-name')).map((el, i) => ({
+            name: el.value, luas: parseFloat(document.querySelectorAll('.p-luas')[i].value) || 0
+        })).filter(p => p.name !== "");
+        await db.collection("reports_v13").doc(id).update({
+            kegiatan: document.getElementById('kegiatan').value,
+            paddocks, hk: parseInt(document.getElementById('hk').value) || 0,
+            unit: document.getElementById('unit').value, catatan: document.getElementById('catatan').value
+        });
+        clearForm(); alert("Data diperbarui!");
+    }
+
+    async function hapusSatu(id) { if(confirm("Hapus data ini?")) await db.collection("reports_v13").doc(id).delete(); }
+
+    function clearForm() {
+        document.getElementById('editId').value = ""; document.getElementById('kegiatan').value = "";
+        document.getElementById('hk').value = ""; document.getElementById('unit').value = ""; document.getElementById('catatan').value = "";
+        document.getElementById('paddockContainer').innerHTML = `<div class="paddock-row"><input type="text" class="p-name" placeholder="📍 Nama Paddock"><input type="number" class="p-luas" placeholder="📐 Luas (Ha)" step="0.01" style="margin-top:5px;"></div>`;
+        document.getElementById('btnUpdate').style.display = "none"; document.getElementById('btnSimpan').style.display = "block";
+    }
+
+    // Init Dates
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('tglDash').value = today;
+    document.getElementById('tglLaporan').value = today;
+    document.getElementById('rekapMulai').value = today;
+    document.getElementById('rekapSelesai').value = today;
     loadDashboard();
 </script>
 </body>
