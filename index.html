@@ -443,13 +443,18 @@
 
         for(let keg in mapData) {
             const d = mapData[keg];
+            
+            // Perhitungan dasar
             const pctLuas = d.pLuas > 0 ? ((d.hLuas / d.pLuas) * 100).toFixed(0) : 0;
-            const pctHK = d.pHK > 0 ? ((d.hHK / d.pHK) * 100).toFixed(0) : 0;
             const hkPerHaPlan = d.pLuas > 0 ? (d.pHK / d.pLuas).toFixed(2) : 0;
             const hkPerHaHasil = d.hLuas > 0 ? (d.hHK / d.hLuas).toFixed(2) : 0;
 
+            // PERBAIKAN: Persentase perbandingan sekarang menggunakan HK/Ha
+            const pctHKPerHa = hkPerHaPlan > 0 ? ((hkPerHaHasil / hkPerHaPlan) * 100).toFixed(0) : 0;
+
+            // Logika Badge
             const badgeLuas = pctLuas > 100 ? `<span class="badge lebih">↑ Lebih</span>` : (pctLuas == 100 ? `<span class="badge pas">✓ Pas</span>` : `<span class="badge kurang">↓ Kurang</span>`);
-            const badgeHK = pctHK > 100 ? `<span class="badge lebih">↑ Lebih</span>` : (pctHK == 100 ? `<span class="badge pas">✓ Pas</span>` : `<span class="badge kurang">↓ Kurang</span>`);
+            const badgeHKPerHa = pctHKPerHa > 100 ? `<span class="badge lebih">↑ Lebih</span>` : (pctHKPerHa == 100 ? `<span class="badge pas">✓ Pas</span>` : `<span class="badge kurang">↓ Kurang</span>`);
 
             html += `
             <div class="flow-container">
@@ -472,7 +477,7 @@
                     <div class="flow-box">
                         <b>📊 STATUS</b><br>
                         Luas: ${pctLuas}% ${badgeLuas}<br>
-                        HK: ${pctHK}% ${badgeHK}
+                        HK/Ha: ${pctHKPerHa}% ${badgeHKPerHa}
                     </div>
                 </div>
             </div>`;
