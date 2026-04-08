@@ -3,51 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoring Upkeep and Manuring</title>
+    <title>Daily Upkeep & Manuring</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        :root { --primary: #2d5a27; --bg: #f8fafc; --text: #334155; --danger: #ef4444; --success: #22c55e; --blue: #3b82f6; --warning: #f59e0b; }
+        :root { --primary: #2d5a27; --bg: #f8fafc; --text: #334155; --danger: #ef4444; --success: #22c55e; --warning: #f59e0b; --blue: #3b82f6; }
         body { font-family: 'Inter', sans-serif; margin: 0; padding: 10px; background: var(--bg); color: var(--text); font-size: 13px; padding-bottom: 120px; }
         .card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 12px; border: 1px solid #e2e8f0; }
         
-        .tab-menu { display: flex; gap: 5px; margin-bottom: 10px; }
-        .tab-menu button { flex: 1; padding: 12px; border: none; border-radius: 10px; cursor: pointer; background: #e2e8f0; font-weight: bold; color: #64748b; font-size: 11px; }
+        /* Tab Menu */
+        .tab-menu { display: flex; gap: 5px; margin-bottom: 10px; overflow-x: auto; }
+        .tab-menu button { flex: 1; padding: 12px; border: none; border-radius: 10px; cursor: pointer; background: #e2e8f0; font-weight: bold; color: #64748b; font-size: 10px; min-width: 80px; }
         .tab-menu button.active { background: var(--primary); color: white; }
 
-        .section-title { font-weight: 800; color: var(--primary); margin-bottom: 10px; display: block; border-left: 3px solid var(--primary); padding-left: 8px; }
-        
+        /* Form Styling */
+        .section-title { font-weight: 800; color: var(--primary); margin: 15px 0 8px 0; display: block; border-left: 3px solid var(--primary); padding-left: 8px; text-transform: uppercase; font-size: 11px; }
         input, textarea, select { padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; width: 100%; box-sizing: border-box; font-size: 14px; margin-bottom: 8px; font-family: inherit; }
         .row-flex { display: flex; gap: 6px; align-items: center; margin-bottom: 5px; }
-        
-        .btn-add { background: transparent; border: 1px dashed var(--primary); color: var(--primary); padding: 8px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
         .btn-main { background: var(--primary); color: white; border: none; width: 100%; padding: 15px; border-radius: 12px; font-weight: 800; cursor: pointer; margin-top: 10px; }
-        
-        .live-card { background: white; border-radius: 12px; padding: 12px; margin-bottom: 10px; border-left: 5px solid var(--primary); position: relative; cursor: grab; }
-        .badge-unit { font-size: 10px; padding: 2px 6px; border-radius: 4px; color: white; margin-right: 4px; display: inline-block; margin-top: 4px; }
+        .btn-add { background: #f1f5f9; border: 1px dashed var(--primary); color: var(--primary); padding: 8px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+
+        /* Unit Grid Khusus */
+        .unit-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 30px; gap: 4px; align-items: center; margin-bottom: 8px; background: #f8fafc; padding: 8px; border-radius: 10px; border: 1px solid #edf2f7; }
+        .unit-row label { font-size: 9px; font-weight: bold; text-align: center; display: block; }
+        .unit-row input { margin-bottom: 0; padding: 8px; text-align: center; }
+
+        /* Live Card */
+        .live-card { background: white; border-radius: 12px; padding: 12px; margin-bottom: 10px; border-left: 5px solid var(--primary); position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; color: white; font-weight: bold; }
 
         .total-footer { position: fixed; bottom: 0; left: 0; right: 0; background: #1e293b; color: white; padding: 15px; text-align: center; font-weight: bold; z-index: 100; border-top: 4px solid var(--primary); }
-        
-        /* Grid Unit */
-        .unit-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 10px; }
-        .unit-box { padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 11px; }
-        .unit-box.kerja { background: #f0fdf4; border-color: #bbf7d0; }
-        .unit-box.standby { background: #fffbeb; border-color: #fde68a; }
-        .unit-box.rusak { background: #fff1f2; border-color: #fecdd3; }
     </style>
 </head>
 <body>
 
 <div class="card" style="text-align:center; padding:10px;">
-    <h3 style="margin:0; color:var(--primary);">Upkeep v2.40 - Plantation Monitoring</h3>
+    <h3 style="margin:0; color:var(--primary);">Upkeep Monitoring v2.50</h3>
 </div>
 
 <div class="tab-menu">
     <button id="tabDash" class="active" onclick="switchTab('Dash')">📊 DASH</button>
     <button id="tabPlanning" onclick="switchTab('Planning')">📋 PLAN</button>
     <button id="tabHasil" onclick="switchTab('Hasil')">✅ HASIL</button>
-    <button id="tabRekap" onclick="switchTab('Rekap')">🔎 HISTORY</button>
+    <button id="tabRekap" onclick="switchTab('Rekap')">🔎 REKAP</button>
+    <button id="tabSet" onclick="switchTab('Set')" style="background:#cbd5e1; color:#1e293b;">⚙️ SETTING</button>
 </div>
 
 <div id="viewMain" style="display:none;">
@@ -55,17 +54,10 @@
         <input type="date" id="tglLaporan">
         <input type="hidden" id="editId">
         
-        <span class="section-title">KEGIATAN & LOKASI</span>
-        <select id="kegiatan">
-            <option value="">-- Pilih Kegiatan --</option>
-            <option value="Manuring">Manuring (Pemupukan)</option>
-            <option value="Herbiciding">Herbiciding (Semprot Gulma)</option>
-            <option value="Manual Weeding">Manual Weeding</option>
-            <option value="Pest Control">Pest Control</option>
-            <option value="Drenching">Drenching (Kocor)</option>
-            <option value="Other">Lain-lain</option>
-        </select>
+        <span class="section-title">KEGIATAN</span>
+        <select id="kegiatanSelect"><option value="">-- Pilih Kegiatan --</option></select>
         
+        <span class="section-title">LOKASI PADDOCK</span>
         <div id="paddockContainer">
             <div class="row-flex">
                 <input type="text" class="p-name" placeholder="Paddock">
@@ -74,92 +66,61 @@
         </div>
         <button class="btn-add" onclick="addRowPaddock()">+ Tambah Paddock</button>
 
-        <span class="section-title">PENGGUNAAN UNIT</span>
-        <div class="unit-grid">
-            <div class="unit-box kerja">
-                <b style="color:var(--success)">KERJA</b>
-                <div id="unitKerjaCont">
-                    <input type="text" class="u-kerja" placeholder="Nama Unit">
-                </div>
-                <button class="btn-add" style="font-size:10px; padding:2px;" onclick="addRowUnit('unitKerjaCont', 'u-kerja')">+</button>
-            </div>
-            <div class="unit-box standby">
-                <b style="color:var(--warning)">STANDBY</b>
-                <div id="unitStandbyCont">
-                    <input type="text" class="u-standby" placeholder="Nama Unit">
-                </div>
-                <button class="btn-add" style="font-size:10px; padding:2px;" onclick="addRowUnit('unitStandbyCont', 'u-standby')">+</button>
-            </div>
-            <div class="unit-box rusak">
-                <b style="color:var(--danger)">RUSAK</b>
-                <div id="unitRusakCont">
-                    <input type="text" class="u-rusak" placeholder="Nama Unit">
-                </div>
-                <button class="btn-add" style="font-size:10px; padding:2px;" onclick="addRowUnit('unitRusakCont', 'u-rusak')">+</button>
+        <span class="section-title">DETAIL UNIT (JUMLAH)</span>
+        <div id="unitContainer">
+            <div class="unit-row">
+                <div><label>NAMA UNIT</label><input type="text" class="u-nama" placeholder="Misal: Stool Splitter"></div>
+                <div><label style="color:var(--success)">KERJA</label><input type="number" class="u-kerja" value="0"></div>
+                <div><label style="color:var(--warning)">STBY</label><input type="number" class="u-stby" value="0"></div>
+                <div><label style="color:var(--danger)">RUSAK</label><input type="number" class="u-rusak" value="0"></div>
+                <button onclick="this.parentElement.remove()" style="border:none;background:none;color:red;margin-top:15px;">✕</button>
             </div>
         </div>
+        <button class="btn-add" onclick="addRowUnit()">+ Tambah Tipe Unit</button>
 
         <span class="section-title">BAHAN / MATERIAL</span>
-        <div id="bahanContainer">
-            <div class="card" style="background:#f1f5f9; padding:10px; margin-bottom:8px;">
-                <select class="b-nama">
-                    <option value="">-- Pilih Bahan --</option>
-                    <option value="Urea">Urea</option>
-                    <option value="NPK 15-15-15">NPK 15-15-15</option>
-                    <option value="NPK 16-16-16">NPK 16-16-16</option>
-                    <option value="DAP">DAP</option>
-                    <option value="Glyphosate">Glyphosate</option>
-                    <option value="Methyl Metsulfuron">Methyl Metsulfuron</option>
-                    <option value="Confidor">Confidor</option>
-                    <option value="Lainnya">Lainnya...</option>
-                </select>
-                <div class="row-flex">
-                    <input type="number" class="b-dosis" placeholder="Dosis/Ha" step="0.01" oninput="hitungSemuaBahan()">
-                    <select class="b-satuan" style="width:100px;">
-                        <option value="Kg">Kg</option>
-                        <option value="L">L</option>
-                        <option value="mL">mL</option>
-                        <option value="Gram">Gram</option>
-                    </select>
-                </div>
-                <input type="number" class="b-total" placeholder="Total Bahan (Auto)" readonly style="background:#e2e8f0;">
-            </div>
-        </div>
-        <button class="btn-add" onclick="addRowBahan()">+ Tambah Bahan Lain</button>
+        <div id="bahanContainer"></div>
+        <button class="btn-add" onclick="addRowBahan()">+ Tambah Bahan</button>
 
-        <span class="section-title">TENAGA KERJA & CATATAN</span>
+        <span class="section-title">LAIN-LAIN</span>
         <input type="number" id="hk" placeholder="Total HK">
-        <textarea id="catatan" placeholder="Catatan tambahan..."></textarea>
+        <textarea id="catatan" placeholder="Tulis keterangan unit rusak/standby di sini..."></textarea>
 
-        <button class="btn-main" id="btnSimpan" onclick="simpanData()">💾 SIMPAN & RESET</button>
+        <button class="btn-main" id="btnSimpan" onclick="simpanData()">💾 SIMPAN & AUTO-CLEAR</button>
         <button class="btn-main" id="btnUpdate" style="display:none; background:var(--blue);" onclick="updateData()">🆙 UPDATE DATA</button>
     </div>
-
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
-        <button onclick="salinWA()" style="background:var(--success); color:white; border:none; padding:12px; border-radius:10px; font-weight:bold;">🟢 SALIN WA</button>
-        <button onclick="copyToHasil()" style="background:var(--blue); color:white; border:none; padding:12px; border-radius:10px; font-weight:bold;">🔄 COPY KE HASIL</button>
-    </div>
-    
     <div id="displayList"></div>
 </div>
 
-<div id="viewDash">
+<div id="viewSet" style="display:none;">
+    <div class="card">
+        <span class="section-title">MASTER DATA KEGIATAN</span>
+        <div class="row-flex">
+            <input type="text" id="newKegiatan" placeholder="Tambah Kegiatan Baru...">
+            <button onclick="addMaster('kegiatan')" style="padding:10px; border-radius:10px; background:var(--primary); color:white; border:none;">+</button>
+        </div>
+        <div id="masterKegiatanList" style="max-height:150px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:10px; padding:10px;"></div>
+    </div>
+
+    <div class="card">
+        <span class="section-title">MASTER DATA BAHAN</span>
+        <div class="row-flex">
+            <input type="text" id="newBahan" placeholder="Tambah Bahan Baru...">
+            <button onclick="addMaster('bahan')" style="padding:10px; border-radius:10px; background:var(--primary); color:white; border:none;">+</button>
+        </div>
+        <div id="masterBahanList" style="max-height:150px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:10px; padding:10px;"></div>
+    </div>
+</div>
+
+<div id="viewDash" style="display:none;">
     <div class="card"><input type="date" id="tglDash" onchange="loadDashboard()"></div>
-    <div id="captureArea"><div class="card" id="listKomparasi"></div></div>
-    <button class="btn-main" style="background:var(--blue);" onclick="downloadDashJPG()">📸 DOWNLOAD JPG</button>
+    <div id="listKomparasi"></div>
 </div>
 
 <div id="viewRekap" style="display:none;">
     <div class="card">
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px;">
-            <input type="date" id="filterTglRekap" onchange="loadRekap()">
-            <select id="filterTypeRekap" onchange="loadRekap()">
-                <option value="">Semua Tipe</option>
-                <option value="Planning">Planning</option>
-                <option value="Hasil">Hasil</option>
-            </select>
-        </div>
-        <button class="btn-main" style="background:var(--success);" onclick="downloadCSV()">📥 EXPORT KE CSV</button>
+        <input type="date" id="filterTglRekap" onchange="loadRekap()">
+        <button class="btn-main" style="background:var(--success);" onclick="downloadCSV()">📥 DOWNLOAD CSV</button>
     </div>
     <div id="listRekap"></div>
 </div>
@@ -177,62 +138,109 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    let currentTab = "Dash";
+
+    let masterKegiatan = [];
+    let masterBahan = [];
 
     function switchTab(t) {
-        currentTab = t;
         document.querySelectorAll('.tab-menu button').forEach(b => b.classList.remove('active'));
         document.getElementById('tab'+t).classList.add('active');
-        document.getElementById('viewDash').style.display = (t === 'Dash') ? 'block' : 'none';
-        document.getElementById('viewRekap').style.display = (t === 'Rekap') ? 'block' : 'none';
-        document.getElementById('viewMain').style.display = (t === 'Planning' || t === 'Hasil') ? 'block' : 'none';
+        const views = ['viewMain', 'viewDash', 'viewRekap', 'viewSet'];
+        views.forEach(v => document.getElementById(v).style.display = 'none');
+        
+        if(t === 'Planning' || t === 'Hasil') {
+            document.getElementById('viewMain').style.display = 'block';
+            loadData(t);
+        } else {
+            document.getElementById('view'+t).style.display = 'block';
+        }
+        if(t === 'Set') loadMasterData();
         if(t === 'Dash') loadDashboard();
-        if(t === 'Planning' || t === 'Hasil') loadData();
         if(t === 'Rekap') loadRekap();
     }
 
-    // --- Dynamic Rows Functions ---
+    // --- MASTER DATA LOGIC ---
+    async function loadMasterData() {
+        const snapKeg = await db.collection("master_kegiatan").get();
+        masterKegiatan = snapKeg.docs.map(doc => ({id: doc.id, ...doc.data()}));
+        renderMaster('kegiatan', masterKegiatan, 'masterKegiatanList');
+        updateDropdowns();
+
+        const snapBah = await db.collection("master_bahan").get();
+        masterBahan = snapBah.docs.map(doc => ({id: doc.id, ...doc.data()}));
+        renderMaster('bahan', masterBahan, 'masterBahanList');
+    }
+
+    function renderMaster(type, data, containerId) {
+        let html = data.map(item => `
+            <div class="row-flex" style="border-bottom:1px solid #f1f5f9; padding:5px 0;">
+                <span style="flex:1;">${item.nama}</span>
+                <button onclick="deleteMaster('${type}', '${item.id}')" style="color:red; border:none; background:none;">✕</button>
+            </div>
+        `).join("");
+        document.getElementById(containerId).innerHTML = html || "<small>Belum ada data</small>";
+    }
+
+    async function addMaster(type) {
+        const input = document.getElementById(type === 'kegiatan' ? 'newKegiatan' : 'newBahan');
+        if(!input.value) return;
+        await db.collection("master_" + type).add({ nama: input.value });
+        input.value = "";
+        loadMasterData();
+    }
+
+    async function deleteMaster(type, id) {
+        if(confirm("Hapus master data ini?")) {
+            await db.collection("master_" + type).doc(id).delete();
+            loadMasterData();
+        }
+    }
+
+    function updateDropdowns() {
+        let html = `<option value="">-- Pilih Kegiatan --</option>`;
+        masterKegiatan.forEach(k => html += `<option value="${k.nama}">${k.nama}</option>`);
+        document.getElementById('kegiatanSelect').innerHTML = html;
+    }
+
+    // --- FORM DYNAMIC ROWS ---
     function addRowPaddock(valN="", valL="") {
         const div = document.createElement('div');
         div.className = 'row-flex';
-        div.innerHTML = `<input type="text" class="p-name" value="${valN}" placeholder="Paddock">
-                         <input type="number" class="p-luas" value="${valL}" placeholder="Ha" step="0.01" style="width:80px;" oninput="hitungSemuaBahan()">
-                         <button onclick="this.parentElement.remove(); hitungSemuaBahan();" style="border:none; background:none; color:red;">✕</button>`;
+        div.innerHTML = `<input type="text" class="p-name" value="${valN}" placeholder="Paddock"><input type="number" class="p-luas" value="${valL}" placeholder="Ha" step="0.01" style="width:80px;" oninput="hitungSemuaBahan()"><button onclick="this.parentElement.remove(); hitungSemuaBahan();" style="border:none;background:none;color:red;">✕</button>`;
         document.getElementById('paddockContainer').appendChild(div);
     }
 
-    function addRowUnit(containerId, className, val="") {
+    function addRowUnit(n="", k=0, s=0, r=0) {
         const div = document.createElement('div');
-        div.className = 'row-flex';
-        div.innerHTML = `<input type="text" class="${className}" value="${val}" placeholder="Nama Unit">
-                         <button onclick="this.parentElement.remove()" style="border:none; background:none; color:red; padding:0;">✕</button>`;
-        document.getElementById(containerId).appendChild(div);
+        div.className = 'unit-row';
+        div.innerHTML = `
+            <div><input type="text" class="u-nama" value="${n}" placeholder="Unit"></div>
+            <div><input type="number" class="u-kerja" value="${k}"></div>
+            <div><input type="number" class="u-stby" value="${s}"></div>
+            <div><input type="number" class="u-rusak" value="${r}"></div>
+            <button onclick="this.parentElement.remove()" style="border:none;background:none;color:red;">✕</button>`;
+        document.getElementById('unitContainer').appendChild(div);
     }
 
-    function addRowBahan(n="", d="", s="Kg", t="") {
+    function addRowBahan(n="", d="", s="Kg") {
+        const totalLuas = Array.from(document.querySelectorAll('.p-luas')).reduce((a, b) => a + (parseFloat(b.value) || 0), 0);
+        const totalVal = (totalLuas * (parseFloat(d) || 0)).toFixed(2);
+        
         const div = document.createElement('div');
-        div.className = 'card'; div.style = "background:#f1f5f9; padding:10px; margin-bottom:8px; position:relative;";
-        div.innerHTML = `<button onclick="this.parentElement.remove(); hitungSemuaBahan();" style="position:absolute; right:5px; top:5px; border:none; background:red; color:white; border-radius:50%; width:18px; height:18px; font-size:10px;">✕</button>
-                <select class="b-nama">
-                    <option value="">-- Pilih Bahan --</option>
-                    <option value="Urea" ${n==='Urea'?'selected':''}>Urea</option>
-                    <option value="NPK 15-15-15" ${n==='NPK 15-15-15'?'selected':''}>NPK 15-15-15</option>
-                    <option value="NPK 16-16-16" ${n==='NPK 16-16-16'?'selected':''}>NPK 16-16-16</option>
-                    <option value="DAP" ${n==='DAP'?'selected':''}>DAP</option>
-                    <option value="Glyphosate" ${n==='Glyphosate'?'selected':''}>Glyphosate</option>
-                    <option value="Confidor" ${n==='Confidor'?'selected':''}>Confidor</option>
-                    <option value="Lainnya" ${n==='Lainnya'?'selected':''}>Lainnya...</option>
+        div.className = 'card'; div.style = "background:#f8fafc; padding:10px; margin-bottom:8px; position:relative;";
+        let options = masterBahan.map(b => `<option value="${b.nama}" ${b.nama===n?'selected':''}>${b.nama}</option>`).join("");
+        div.innerHTML = `
+            <button onclick="this.parentElement.remove(); hitungSemuaBahan();" style="position:absolute;right:5px;top:5px;border:none;background:red;color:white;border-radius:50%;width:18px;height:18px;font-size:10px;">✕</button>
+            <select class="b-nama"><option value="">-- Pilih Bahan --</option>${options}</select>
+            <div class="row-flex">
+                <input type="number" class="b-dosis" value="${d}" placeholder="Dosis/Ha" step="0.01" oninput="hitungSemuaBahan()">
+                <select class="b-satuan" style="width:100px;">
+                    <option value="Kg" ${s==='Kg'?'selected':''}>Kg</option>
+                    <option value="L" ${s==='L'?'selected':''}>L</option>
+                    <option value="mL" ${s==='mL'?'selected':''}>mL</option>
                 </select>
-                <div class="row-flex">
-                    <input type="number" class="b-dosis" value="${d}" placeholder="Dosis/Ha" step="0.01" oninput="hitungSemuaBahan()">
-                    <select class="b-satuan" style="width:100px;">
-                        <option value="Kg" ${s==='Kg'?'selected':''}>Kg</option>
-                        <option value="L" ${s==='L'?'selected':''}>L</option>
-                        <option value="mL" ${s==='mL'?'selected':''}>mL</option>
-                        <option value="Gram" ${s==='Gram'?'selected':''}>Gram</option>
-                    </select>
-                </div>
-                <input type="number" class="b-total" value="${t}" placeholder="Total Bahan (Auto)" readonly style="background:#e2e8f0;">`;
+            </div>
+            <input type="number" class="b-total" value="${totalVal}" placeholder="Total" readonly style="background:#e2e8f0;">`;
         document.getElementById('bahanContainer').appendChild(div);
     }
 
@@ -244,160 +252,89 @@
         });
     }
 
-    // --- Database Functions ---
+    // --- DATA ACTIONS ---
     async function simpanData() {
-        const payload = getFormData();
-        if(!payload.kegiatan) return alert("Pilih Kegiatan!");
-
-        await db.collection("reports_v14").add({
-            ...payload, 
-            type: currentTab, 
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        clearForm();
-        alert("Data Tersimpan!");
-    }
-
-    function getFormData() {
-        return {
+        const type = document.querySelector('.tab-menu button.active').innerText.includes('PLAN') ? 'Planning' : 'Hasil';
+        const payload = {
             tgl: document.getElementById('tglLaporan').value,
-            kegiatan: document.getElementById('kegiatan').value,
+            type: type,
+            kegiatan: document.getElementById('kegiatanSelect').value,
+            hk: parseInt(document.getElementById('hk').value) || 0,
+            catatan: document.getElementById('catatan').value,
             paddocks: Array.from(document.querySelectorAll('.p-name')).map((el, i) => ({
                 name: el.value, luas: parseFloat(document.querySelectorAll('.p-luas')[i].value) || 0
             })).filter(p => p.name !== ""),
-            unit: {
-                kerja: Array.from(document.querySelectorAll('.u-kerja')).map(el => el.value).filter(v => v !== ""),
-                standby: Array.from(document.querySelectorAll('.u-standby')).map(el => el.value).filter(v => v !== ""),
-                rusak: Array.from(document.querySelectorAll('.u-rusak')).map(el => el.value).filter(v => v !== "")
-            },
-            bahan: Array.from(document.querySelectorAll('#bahanContainer .card')).map(row => ({
+            units: Array.from(document.querySelectorAll('.unit-row')).map(row => ({
+                nama: row.querySelector('.u-nama').value,
+                kerja: parseInt(row.querySelector('.u-kerja').value) || 0,
+                stby: parseInt(row.querySelector('.u-stby').value) || 0,
+                rusak: parseInt(row.querySelector('.u-rusak').value) || 0
+            })).filter(u => u.nama !== ""),
+            materials: Array.from(document.querySelectorAll('#bahanContainer .card')).map(row => ({
                 nama: row.querySelector('.b-nama').value,
                 dosis: parseFloat(row.querySelector('.b-dosis').value) || 0,
                 satuan: row.querySelector('.b-satuan').value,
                 total: parseFloat(row.querySelector('.b-total').value) || 0
-            })).filter(b => b.nama !== ""),
-            hk: parseInt(document.getElementById('hk').value) || 0,
-            catatan: document.getElementById('catatan').value
+            })).filter(m => m.nama !== ""),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
+
+        if(!payload.kegiatan) return alert("Pilih Kegiatan!");
+        await db.collection("reports_v15").add(payload);
+        clearForm();
+        alert("Data Tersimpan & Form Dikosongkan!");
     }
 
-    function loadData() {
+    function loadData(type) {
         const tgl = document.getElementById('tglLaporan').value;
-        db.collection("reports_v14").where("tgl", "==", tgl).where("type", "==", currentTab).onSnapshot(snap => {
-            let html = ""; let totalHK = 0;
+        db.collection("reports_v15").where("tgl", "==", tgl).where("type", "==", type).onSnapshot(snap => {
+            let html = "";
             snap.forEach(doc => {
-                const d = doc.data(); totalHK += d.hk;
-                const sumL = d.paddocks.reduce((a, b) => a + b.luas, 0);
-                
-                html += `<div class="live-card">
-                    <div style="display:flex; justify-content:space-between;"><b>${d.kegiatan}</b> <span>${sumL.toFixed(2)} Ha</span></div>
-                    <div style="font-size:11px; color:gray; margin:5px 0;">${d.paddocks.map(p => p.name).join(", ")}</div>
-                    <div>
-                        ${d.unit.kerja.map(u => `<span class="badge-unit bg-kerja" style="background:var(--success)">${u}</span>`).join("")}
-                        ${d.unit.standby.map(u => `<span class="badge-unit bg-standby" style="background:var(--warning); color:black;">${u}</span>`).join("")}
-                        ${d.unit.rusak.map(u => `<span class="badge-unit bg-rusak" style="background:var(--danger)">${u}</span>`).join("")}
+                const d = doc.data();
+                const totalLuas = d.paddocks.reduce((a,b) => a+b.luas, 0);
+                html += `
+                <div class="live-card">
+                    <div style="display:flex; justify-content:space-between; font-weight:800;">
+                        <span>${d.kegiatan}</span>
+                        <span>${totalLuas.toFixed(2)} Ha</span>
                     </div>
-                    <div style="background:#f1f5f9; padding:5px; border-radius:6px; margin-top:8px; font-size:11px;">
-                        ${d.bahan.map(b => `🧪 ${b.nama}: ${b.total} ${b.satuan} (${b.dosis}/Ha)`).join("<br>")}
+                    <div style="font-size:11px; margin:5px 0;">${d.paddocks.map(p => p.name).join(", ")}</div>
+                    <div style="margin:8px 0;">
+                        ${d.units.map(u => `
+                            <div style="font-size:10px; background:#f1f5f9; padding:4px; border-radius:4px; margin-bottom:2px;">
+                                <b>${u.nama}</b>: <span style="color:var(--success)">K:${u.kerja}</span> | <span style="color:var(--warning)">S:${u.stby}</span> | <span style="color:var(--danger)">R:${u.rusak}</span>
+                            </div>
+                        `).join("")}
+                    </div>
+                    <div style="font-size:11px; color:var(--primary);">
+                        ${d.materials.map(m => `🧪 ${m.nama}: ${m.total}${m.satuan}`).join(" | ")}
                     </div>
                     <div style="display:flex; justify-content:flex-end; gap:5px; margin-top:10px;">
-                        <button onclick="editTarik('${doc.id}')" style="background:var(--blue); color:white; border:none; padding:5px 12px; border-radius:6px;">EDIT</button>
-                        <button onclick="hapusSatu('${doc.id}')" style="background:var(--danger); color:white; border:none; padding:5px 8px; border-radius:6px;">✕</button>
+                        <button onclick="hapusData('${doc.id}')" style="background:var(--danger); color:white; border:none; padding:5px 10px; border-radius:6px;">✕</button>
                     </div>
                 </div>`;
             });
             document.getElementById('displayList').innerHTML = html;
-            document.getElementById('footerTotalHK').innerText = `TOTAL HK: ${totalHK}`;
         });
     }
 
     function clearForm() {
-        document.getElementById('editId').value = "";
-        document.getElementById('kegiatan').value = "";
+        document.getElementById('kegiatanSelect').value = "";
         document.getElementById('hk').value = "";
         document.getElementById('catatan').value = "";
-        
-        // Reset Containers
-        document.getElementById('paddockContainer').innerHTML = '<div class="row-flex"><input type="text" class="p-name" placeholder="Paddock"><input type="number" class="p-luas" placeholder="Ha" step="0.01" style="width:80px;" oninput="hitungSemuaBahan()"></div>';
-        document.getElementById('unitKerjaCont').innerHTML = '<input type="text" class="u-kerja" placeholder="Nama Unit">';
-        document.getElementById('unitStandbyCont').innerHTML = '<input type="text" class="u-standby" placeholder="Nama Unit">';
-        document.getElementById('unitRusakCont').innerHTML = '<input type="text" class="u-rusak" placeholder="Nama Unit">';
-        document.getElementById('bahanContainer').innerHTML = `
-            <div class="card" style="background:#f1f5f9; padding:10px; margin-bottom:8px;">
-                <select class="b-nama"><option value="">-- Pilih Bahan --</option><option value="Urea">Urea</option><option value="NPK 15-15-15">NPK 15-15-15</option><option value="Glyphosate">Glyphosate</option></select>
-                <div class="row-flex"><input type="number" class="b-dosis" placeholder="Dosis/Ha" step="0.01" oninput="hitungSemuaBahan()"><select class="b-satuan" style="width:100px;"><option value="Kg">Kg</option><option value="L">L</option></select></div>
-                <input type="number" class="b-total" placeholder="Total Bahan (Auto)" readonly style="background:#e2e8f0;">
-            </div>`;
-        document.getElementById('btnUpdate').style.display = "none";
-        document.getElementById('btnSimpan').style.display = "block";
-    }
-
-    async function editTarik(id) {
-        const doc = await db.collection("reports_v14").doc(id).get();
-        const d = doc.data();
-        document.getElementById('editId').value = id;
-        document.getElementById('kegiatan').value = d.kegiatan;
-        document.getElementById('hk').value = d.hk;
-        document.getElementById('catatan').value = d.catatan;
-
-        // Fill Paddocks
-        document.getElementById('paddockContainer').innerHTML = "";
-        d.paddocks.forEach(p => addRowPaddock(p.name, p.luas));
-
-        // Fill Units
-        document.getElementById('unitKerjaCont').innerHTML = "";
-        d.unit.kerja.forEach(u => addRowUnit('unitKerjaCont', 'u-kerja', u));
-        document.getElementById('unitStandbyCont').innerHTML = "";
-        d.unit.standby.forEach(u => addRowUnit('unitStandbyCont', 'u-standby', u));
-        document.getElementById('unitRusakCont').innerHTML = "";
-        d.unit.rusak.forEach(u => addRowUnit('unitRusakCont', 'u-rusak', u));
-
-        // Fill Bahan
+        document.getElementById('paddockContainer').innerHTML = `<div class="row-flex"><input type="text" class="p-name" placeholder="Paddock"><input type="number" class="p-luas" placeholder="Ha" step="0.01" style="width:80px;" oninput="hitungSemuaBahan()"></div>`;
+        document.getElementById('unitContainer').innerHTML = ""; addRowUnit();
         document.getElementById('bahanContainer').innerHTML = "";
-        d.bahan.forEach(b => addRowBahan(b.nama, b.dosis, b.satuan, b.total));
-
-        document.getElementById('btnSimpan').style.display = "none";
-        document.getElementById('btnUpdate').style.display = "block";
-        window.scrollTo(0,0);
     }
 
-    async function updateData() {
-        const id = document.getElementById('editId').value;
-        await db.collection("reports_v14").doc(id).update({
-            ...getFormData(),
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        clearForm();
-        alert("Data Diperbarui!");
-    }
+    function hapusData(id) { if(confirm("Hapus data ini?")) db.collection("reports_v15").doc(id).delete(); }
 
-    async function salinWA() {
-        const tgl = document.getElementById('tglLaporan').value;
-        const snap = await db.collection("reports_v14").where("tgl", "==", tgl).where("type", "==", currentTab).get();
-        if(snap.empty) return alert("Data kosong.");
-
-        let text = `*LAPORAN ${currentTab.toUpperCase()} - ${tgl}*\n\n`;
-        snap.forEach(doc => {
-            const d = doc.data();
-            const totalHa = d.paddocks.reduce((a,b) => a+b.luas, 0);
-            text += `🔹 *${d.kegiatan.toUpperCase()}*\n`;
-            text += `Paddock: ${d.paddocks.map(p => `${p.name}(${p.luas}Ha)`).join(", ")}\n`;
-            text += `Total: *${totalHa.toFixed(2)} Ha* | HK: *${d.hk}*\n`;
-            if(d.unit.kerja.length > 0) text += `Unit Kerja: ${d.unit.kerja.join(", ")}\n`;
-            if(d.unit.rusak.length > 0) text += `Unit Rusak: ${d.unit.rusak.join(", ")}\n`;
-            text += `Bahan:\n${d.bahan.map(b => `- ${b.nama}: ${b.total}${b.satuan}`).join("\n")}\n\n`;
-        });
-        navigator.clipboard.writeText(text).then(() => alert("Teks WA Berhasil Disalin!"));
-    }
-
-    // --- Sisanya fungsi dashboard dan history (sama seperti v2.36 namun disesuaikan array bahan) ---
+    // Init
     const tdy = new Date().toISOString().split('T')[0];
     document.getElementById('tglLaporan').value = tdy;
-    document.getElementById('tglDash').value = tdy;
-    document.getElementById('filterTglRekap').value = tdy;
+    loadMasterData();
     switchTab('Dash');
-
-    function hapusSatu(id) { if(confirm("Hapus data?")) db.collection("reports_v14").doc(id).delete(); }
 </script>
+
 </body>
 </html>
