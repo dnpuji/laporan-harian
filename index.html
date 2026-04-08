@@ -3,98 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoring Upkeep v2.80 - Full Features</title>
+    <title>Upkeep v2.36 - Monitoring & Unit Management</title>
+    <!-- Firebase & Utils -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Drag & Drop -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
-        :root { --primary: #2d5a27; --bg: #f8fafc; --text: #334155; --danger: #ef4444; --success: #22c55e; --warning: #f59e0b; --blue: #3b82f6; }
-        body { font-family: 'Inter', sans-serif; margin: 0; padding: 10px; background: var(--bg); color: var(--text); font-size: 13px; padding-bottom: 120px; }
-        .card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 12px; border: 1px solid #e2e8f0; }
+        :root { --primary: #2d5a27; --bg: #f8fafc; --text: #334155; --danger: #ef4444; --success: #22c55e; --blue: #3b82f6; --warning: #f59e0b; }
+        body { font-family: 'Inter', sans-serif; margin: 0; padding: 10px; background: var(--bg); color: var(--text); font-size: 13px; padding-bottom: 130px; }
+        .card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 15px; border: 1px solid #e2e8f0; }
         
-        .tab-menu { display: flex; gap: 5px; margin-bottom: 10px; overflow-x: auto; scrollbar-width: none; }
-        .tab-menu button { flex: 1; padding: 12px; border: none; border-radius: 10px; cursor: pointer; background: #e2e8f0; font-weight: bold; color: #64748b; font-size: 10px; min-width: 80px; }
+        .tab-menu { display: flex; gap: 5px; margin-bottom: 10px; overflow-x: auto; flex-wrap: wrap; }
+        .tab-menu button { flex: 1 0 80px; padding: 10px 5px; border: none; border-radius: 10px; cursor: pointer; background: #e2e8f0; font-weight: bold; color: #64748b; font-size: 10px; min-width: 80px; }
         .tab-menu button.active { background: var(--primary); color: white; }
 
-        .unit-input-row { display: grid; grid-template-columns: 1.5fr 0.8fr 0.8fr 0.8fr 35px; gap: 5px; margin-bottom: 8px; }
-        .bahan-input-row { display: grid; grid-template-columns: 1.2fr 0.7fr 0.8fr 35px; gap: 5px; margin-bottom: 8px; }
-        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; box-sizing: border-box; }
+        .live-card { background: white; border-radius: 12px; padding: 12px; margin-bottom: 10px; border-left: 5px solid var(--primary); position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: grab; transition: 0.1s; }
+        .live-card:active { cursor: grabbing; }
+        .live-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 8px; }
+        
+        .paddock-list-detail { background: #f8fafc; padding: 8px; border-radius: 8px; margin: 8px 0; font-size: 11px; border: 1px solid #edf2f7; }
+        .paddock-item { display: flex; justify-content: space-between; border-bottom: 1px dashed #cbd5e1; padding: 2px 0; }
 
-        .btn-main { background: var(--primary); color: white; border: none; width: 100%; padding: 14px; border-radius: 10px; font-weight: 800; cursor: pointer; margin-top: 10px; }
-        .btn-sm { padding: 6px 10px; border-radius: 6px; border: none; font-size: 10px; cursor: pointer; font-weight: bold; color: white; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 8px; }
+        .stat-small { background: #f1f5f9; padding: 6px; border-radius: 6px; text-align: center; border: 1px solid #e2e8f0; font-size: 11px; }
+        .eff-badge { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; font-weight: 800; }
+
+        input, textarea, select { padding: 10px; border: 1px solid #e2e8f0; border-radius: 10px; width: 100%; box-sizing: border-box; font-size: 14px; margin-bottom: 8px; background: white; }
+        .btn-main { background: var(--primary); color: white; border: none; width: 100%; padding: 15px; border-radius: 12px; font-weight: 800; cursor: pointer; }
+        .total-footer { position: fixed; bottom: 0; left: 0; right: 0; background: #1e293b; color: white; padding: 15px; text-align: center; font-weight: bold; z-index: 100; border-top: 4px solid var(--primary); }
         
-        /* Dashboard Activity */
-        .act-card { border-left: 4px solid var(--primary); padding: 10px; margin-bottom: 10px; background: #fff; border-radius: 8px; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        
-        /* Recap List */
-        .recap-item { padding: 12px; border-bottom: 1px solid #eee; position: relative; }
-        .badge { position: absolute; right: 10px; top: 10px; padding: 3px 7px; border-radius: 5px; font-size: 9px; color: white; }
+        .progress-bar { background: #e2e8f0; height: 10px; border-radius: 5px; width: 100%; overflow: hidden; margin-top: 5px; }
+        .progress-fill { background: var(--success); height: 100%; border-radius: 5px; transition: width 0.3s ease; }
+
+        .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+        .filter-bar select, .filter-bar input { width: auto; flex:1; min-width: 120px; margin-bottom:0; }
+        .unit-badge { display: inline-block; padding: 2px 8px; border-radius: 30px; font-size: 10px; font-weight: bold; }
+        .status-kerja { background: #dcfce7; color: #166534; }
+        .status-rusak { background: #fee2e2; color: #991b1b; }
+        .status-standby { background: #fef9c3; color: #854d0e; }
     </style>
 </head>
 <body>
 
 <div class="card" style="text-align:center; padding:10px;">
-    <h3 style="margin:0; color:var(--primary);">Upkeep Management v2.80</h3>
+    <h3 style="margin:0; color:var(--primary);">🌱 Upkeep v2.36 - Efisiensi & Unit</h3>
 </div>
 
 <div class="tab-menu">
     <button id="tabDash" class="active" onclick="switchTab('Dash')">📊 DASHBOARD</button>
-    <button id="tabPlanning" onclick="switchTab('Planning')">📋 PLAN</button>
+    <button id="tabPlanning" onclick="switchTab('Planning')">📋 PLANNING</button>
     <button id="tabHasil" onclick="switchTab('Hasil')">✅ HASIL</button>
-    <button id="tabRekap" onclick="switchTab('Rekap')">🔎 REKAP</button>
-    <button id="tabSet" onclick="switchTab('Set')">⚙️ SETTING</button>
+    <button id="tabRekap" onclick="switchTab('Rekap')">🔎 HISTORY</button>
+    <button id="tabUnit" onclick="switchTab('Unit')">🚜 UNIT</button>
 </div>
 
+<!-- VIEW: DASHBOARD -->
 <div id="viewDash">
-    <div class="card"><input type="date" id="tglDash" onchange="loadDashboard()"></div>
-    <div id="captureArea"><div id="dashActivityContainer"></div></div>
-    <button class="btn-main" style="background:var(--blue)" onclick="downloadDashboard()">📸 DOWNLOAD JPG</button>
+    <div class="card" style="text-align:center;">
+        <input type="date" id="tglDash" onchange="loadDashboard()">
+    </div>
+    <div id="captureArea"><div class="card" id="listKomparasi"></div></div>
+    <button class="btn-main" style="background:var(--blue);" onclick="downloadDashJPG()">📸 DOWNLOAD JPG</button>
 </div>
 
+<!-- VIEW: PLANNING / HASIL (FORM + LIST) -->
 <div id="viewMain" style="display:none;">
     <div class="card">
-        <input type="date" id="tglLaporan" onchange="refreshView()">
-        <select id="kegiatanSelect"><option value="">-- Pilih Kegiatan --</option></select>
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+            <input type="date" id="tglLaporan" onchange="loadData()" style="flex:2;">
+            <b id="formTitle" style="flex:1; text-align:right;">Input Data</b>
+        </div>
+        <input type="hidden" id="editId">
+        <input type="text" id="kegiatan" placeholder="Nama Kegiatan">
         
-        <div id="paddockContainer" style="margin-top:10px;"></div>
-        <button onclick="addRowPaddock()" style="font-size:11px; color:var(--blue); border:none; background:none;">+ Tambah Paddock</button>
+        <div id="paddockContainer">
+            <div class="card" style="background:#f1f5f9; padding:10px; margin-bottom:5px;">
+                <input type="text" class="p-name" placeholder="Paddock" oninput="hitungTotalBahan()">
+                <input type="number" class="p-luas" placeholder="Luas (Ha)" step="0.01" oninput="hitungTotalBahan()">
+            </div>
+        </div>
+        <button onclick="addRow('paddockContainer')" style="width:100%; padding:8px; margin-bottom:10px; border-radius:10px; border:1px dashed var(--primary); background:transparent; color:var(--primary); font-weight:bold;">+ Tambah Paddock</button>
+        
+        <div style="display:flex; gap:5px;">
+            <input type="number" id="hk" placeholder="Total HK">
+            <select id="unitSelect" style="width:60%;">
+                <option value="">-- Pilih Unit (Alat) --</option>
+            </select>
+        </div>
+        <div style="font-size:11px; margin:-5px 0 8px 0; color:#64748b;">
+            ⚙️ Unit hanya menampilkan status "Kerja". Kelola di tab UNIT.
+        </div>
 
-        <div id="unitContainer" style="margin-top:10px;"></div>
-        <button onclick="addRowUnit()" style="font-size:11px; color:var(--blue); border:none; background:none;">+ Tambah Unit</button>
+        <div style="display:flex; gap:5px;">
+            <input type="text" id="bahan" placeholder="Nama Bahan">
+            <select id="satuan" style="width:40%;">
+                <option value="L">L</option>
+                <option value="mL">mL</option>
+                <option value="Kg">Kg</option>
+                <option value="Gram">Gram</option>
+                <option value="pcs">pcs</option>
+            </select>
+        </div>
+        <div style="display:flex; gap:5px;">
+            <input type="number" id="dosis" placeholder="Dosis/Ha" step="0.01" oninput="hitungTotalBahan()">
+            <input type="number" id="totalBahan" placeholder="Total Bahan (Auto)" step="0.01" readonly style="background:#e2e8f0; font-weight:bold;">
+        </div>
 
-        <div id="bahanContainer" style="margin-top:10px;"></div>
-        <button onclick="addRowBahan()" style="font-size:11px; color:var(--blue); border:none; background:none;">+ Tambah Bahan</button>
-
-        <input type="number" id="hk" placeholder="Total HK" style="margin-top:10px;">
-        <textarea id="catatan" placeholder="Catatan..."></textarea>
-        <button class="btn-main" onclick="simpanData()">💾 SIMPAN DATA</button>
+        <textarea id="catatan" placeholder="Catatan/Alasan..."></textarea>
+        <button class="btn-main" id="btnSimpan" onclick="simpanData()">💾 SIMPAN DATA</button>
+        <button class="btn-main" id="btnUpdate" style="display:none; background:var(--blue);" onclick="updateData()">🆙 UPDATE DATA</button>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
+        <button onclick="salinWA()" style="background:var(--success); color:white; border:none; padding:12px; border-radius:10px; font-weight:bold;">🟢 SALIN WA</button>
+        <button onclick="copyToHasil()" style="background:var(--blue); color:white; border:none; padding:12px; border-radius:10px; font-weight:bold;">🔄 COPY KE HASIL</button>
     </div>
     <div id="displayList"></div>
+    <div style="font-size:11px; color:gray; margin: 5px 0;">↕️ Geser (drag) kartu untuk menyusun ulang tampilan (sementara).</div>
 </div>
 
+<!-- VIEW: HISTORY / REKAP -->
 <div id="viewRekap" style="display:none;">
     <div class="card">
-        <div class="grid-2">
-            <input type="date" id="tglRekap" onchange="loadRekap()">
-            <button onclick="downloadCSV()" style="background:var(--success); color:white; border:none; border-radius:8px;">📥 CSV (EXCEL)</button>
+        <div class="filter-bar">
+            <input type="month" id="blnRekap" onchange="loadRekap()">
+            <select id="filterTypeRekap" onchange="loadRekap()">
+                <option value="Semua">Semua Tipe</option>
+                <option value="Planning">Planning</option>
+                <option value="Hasil">Hasil</option>
+            </select>
+            <button onclick="downloadCSV()" style="background:var(--blue); color:white; border:none; padding:10px; border-radius:10px;">📥 CSV</button>
+        </div>
+        <div style="display:flex; gap:5px; margin-bottom:10px;">
+            <input type="date" id="tglStartRekap" placeholder="Dari" onchange="loadRekap()">
+            <input type="date" id="tglEndRekap" placeholder="Sampai" onchange="loadRekap()">
         </div>
     </div>
-    <div id="listRekap" class="card" style="padding:0;"></div>
+    <div id="listRekap"></div>
 </div>
 
-<div id="viewSet" style="display:none;">
+<!-- VIEW: UNIT MANAGEMENT -->
+<div id="viewUnit" style="display:none;">
     <div class="card">
-        <input type="text" id="newMaster" placeholder="Nama item baru...">
-        <div class="grid-2" style="margin-top:10px;">
-            <button onclick="addMaster('kegiatan')" style="background:var(--primary); color:white; border:none; padding:10px; border-radius:8px;">+ KEGIATAN</button>
-            <button onclick="addMaster('bahan')" style="background:var(--blue); color:white; border:none; padding:10px; border-radius:8px;">+ BAHAN</button>
-        </div>
-        <div id="masterList" style="margin-top:15px; border-top:1px solid #eee;"></div>
+        <h4 style="margin-top:0;">➕ Tambah / Edit Unit</h4>
+        <input type="hidden" id="unitIdEdit">
+        <input type="text" id="unitNama" placeholder="Nama Unit (misal: Sprayer A)">
+        <select id="unitStatus">
+            <option value="Kerja">✅ Kerja</option>
+            <option value="Rusak">🔴 Rusak</option>
+            <option value="Standby">🟡 Standby</option>
+        </select>
+        <input type="text" id="unitCatatan" placeholder="Catatan (opsional)">
+        <button class="btn-main" onclick="simpanUnit()">💾 SIMPAN UNIT</button>
+        <button class="btn-main" id="btnUpdateUnit" style="display:none; background:var(--blue);" onclick="updateUnit()">✏️ UPDATE UNIT</button>
     </div>
+    <div id="listUnit"></div>
 </div>
+
+<div class="total-footer" id="footerTotalHK">TOTAL HK: 0</div>
 
 <script>
+    // Firebase init
     const firebaseConfig = {
         apiKey: "AIzaSyAgxUFI0NSD-7Ka8ZxFJwkupR6rgb_i00w",
         authDomain: "monitoring-upkeep.firebaseapp.com",
@@ -105,207 +175,414 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    
+    let currentTab = "Dash";
+    let sortableInstance = null;
 
-    let masterKegiatan = [];
-    let masterBahan = [];
-
+    // ---------- TAB SWITCH ----------
     function switchTab(t) {
+        currentTab = t;
         document.querySelectorAll('.tab-menu button').forEach(b => b.classList.remove('active'));
         document.getElementById('tab'+t).classList.add('active');
-        ['viewMain', 'viewDash', 'viewRekap', 'viewSet'].forEach(v => document.getElementById(v).style.display = 'none');
+        document.getElementById('viewDash').style.display = (t === 'Dash') ? 'block' : 'none';
+        document.getElementById('viewRekap').style.display = (t === 'Rekap') ? 'block' : 'none';
+        document.getElementById('viewMain').style.display = (t === 'Planning' || t === 'Hasil') ? 'block' : 'none';
+        document.getElementById('viewUnit').style.display = (t === 'Unit') ? 'block' : 'none';
         
-        if(t === 'Planning' || t === 'Hasil') {
-            document.getElementById('viewMain').style.display = 'block';
-            refreshView();
-        } else {
-            document.getElementById('view'+t).style.display = 'block';
-        }
         if(t === 'Dash') loadDashboard();
+        if(t === 'Planning' || t === 'Hasil') { loadData(); populateUnitSelect(); }
         if(t === 'Rekap') loadRekap();
-        if(t === 'Set') loadMasterData();
+        if(t === 'Unit') loadUnits();
     }
 
-    // --- LOGIC REKAP & CSV ---
-    async function loadRekap() {
-        const tgl = document.getElementById('tglRekap').value;
-        const snap = await db.collection("reports_v15").where("tgl", "==", tgl).get();
-        let html = "";
+    // ---------- PADDOCK & BAHAN ----------
+    function addRow(id, valN="", valL="") {
+        const div = document.createElement('div');
+        div.className = 'card'; div.style = "background:#f1f5f9; padding:10px; margin-bottom:5px; position:relative;";
+        div.innerHTML = `<button onclick="this.parentElement.remove(); hitungTotalBahan();" style="position:absolute;right:5px;top:5px;border:none;background:red;color:white;border-radius:50%;width:18px;height:18px;font-size:10px;">✕</button>
+            <input type="text" class="p-name" value="${valN}" placeholder="Paddock" oninput="hitungTotalBahan()">
+            <input type="number" class="p-luas" value="${valL}" placeholder="Luas (Ha)" step="0.01" oninput="hitungTotalBahan()">`;
+        document.getElementById(id).appendChild(div);
+    }
+
+    function hitungTotalBahan() {
+        const dosis = parseFloat(document.getElementById('dosis').value) || 0;
+        const luasArr = Array.from(document.querySelectorAll('.p-luas')).map(el => parseFloat(el.value) || 0);
+        const totalLuas = luasArr.reduce((a, b) => a + b, 0);
+        const totalBahan = totalLuas * dosis;
+        document.getElementById('totalBahan').value = totalBahan > 0 ? totalBahan.toFixed(2) : "";
+    }
+
+    // ---------- UNIT SELECT POPULATE ----------
+    async function populateUnitSelect() {
+        const select = document.getElementById('unitSelect');
+        select.innerHTML = '<option value="">-- Pilih Unit (Kerja) --</option>';
+        const snap = await db.collection("units").where("status", "==", "Kerja").get();
         snap.forEach(doc => {
-            const d = doc.data();
-            const color = d.type === 'Planning' ? 'var(--blue)' : 'var(--success)';
-            html += `<div class="recap-item">
-                <span class="badge" style="background:${color}">${d.type}</span>
-                <b>${d.kegiatan}</b><br>
-                <small>${d.paddocks.map(p => p.name).join(", ")} (${d.paddocks.reduce((a,b)=>a+b.luas,0).toFixed(2)} Ha)</small>
-                <div style="margin-top:5px;"><button onclick="hapusData('${doc.id}')" style="color:red; background:none; border:none; font-size:10px;">HAPUS PERMANEN</button></div>
-            </div>`;
+            const u = doc.data();
+            const opt = document.createElement('option');
+            opt.value = u.nama;
+            opt.textContent = `${u.nama} (${u.status})`;
+            select.appendChild(opt);
         });
-        document.getElementById('listRekap').innerHTML = html || "<p style='padding:20px;text-align:center;'>Data Kosong</p>";
     }
 
-    async function downloadCSV() {
-        const tgl = document.getElementById('tglRekap').value;
-        const snap = await db.collection("reports_v15").where("tgl", "==", tgl).get();
-        let csv = "Tanggal,Tipe,Kegiatan,Paddock,Luas_Ha,HK,Bahan_Dosis\n";
-        
-        snap.forEach(doc => {
-            const d = doc.data();
-            const pads = d.paddocks.map(p => p.name).join("|");
-            const luas = d.paddocks.reduce((a,b)=>a+b.luas,0);
-            const mats = d.materials.map(m => `${m.nama}(${m.dosis}${m.satuan})`).join("|");
-            csv += `${d.tgl},${d.type},${d.kegiatan},${pads},${luas},${d.hk},${mats}\n`;
-        });
-
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.setAttribute('hidden', '');
-        a.setAttribute('href', url);
-        a.setAttribute('download', `Rekap_Upkeep_${tgl}.csv`);
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    }
-
-    // --- COPY FUNCTIONS ---
-    async function copyToWA(data) {
-        let text = `*LAPORAN ${data.type.toUpperCase()} - ${data.tgl}*\n`;
-        text += `Kegiatan: ${data.kegiatan}\n`;
-        text += `Lokasi: ${data.paddocks.map(p => p.name + " (" + p.luas + "Ha)").join(", ")}\n`;
-        text += `Tenaga Kerja: ${data.hk} HK\n`;
-        text += `Unit: ${data.units.map(u => u.nama + "(K:"+u.kerja+"/S:"+u.stby+"/R:"+u.rusak+")").join(", ")}\n`;
-        text += `Bahan: ${data.materials.map(m => m.nama + " (" + m.dosis + m.satuan + ")").join(", ")}\n`;
-        if(data.catatan) text += `Catatan: ${data.catatan}`;
-        
-        await navigator.clipboard.writeText(text);
-        alert("Berhasil Copy ke WA!");
-    }
-
-    async function copyToHasil(data) {
-        if(confirm("Salin Plan ini ke menu HASIL?")) {
-            const newData = {...data, type: 'Hasil', updatedAt: firebase.firestore.FieldValue.serverTimestamp()};
-            await db.collection("reports_v15").add(newData);
-            alert("Berhasil disalin ke HASIL!");
-            switchTab('Hasil');
-        }
-    }
-
-    // --- DYNAMIC ROWS ---
-    function addRowBahan(n="", d="", s="Kg") {
-        const div = document.createElement('div'); div.className = 'bahan-input-row';
-        let opts = masterBahan.map(b => `<option value="${b.nama}" ${b.nama===n?'selected':''}>${b.nama}</option>`).join("");
-        div.innerHTML = `
-            <select class="b-nama"><option value="">Bahan...</option>${opts}</select>
-            <input type="number" class="b-dosis" value="${d}" placeholder="Dosis">
-            <select class="b-satuan">
-                <option value="Kg" ${s==='Kg'?'selected':''}>Kg</option>
-                <option value="L" ${s==='L'?'selected':''}>L</option>
-                <option value="Gram" ${s==='Gram'?'selected':''}>Gram</option>
-                <option value="mL" ${s==='mL'?'selected':''}>mL</option>
-                <option value="pcs" ${s==='pcs'?'selected':''}>pcs</option>
-            </select>
-            <button onclick="this.parentElement.remove()" style="color:red; border:none; background:none;">✕</button>`;
-        document.getElementById('bahanContainer').appendChild(div);
-    }
-
-    // (Fungsi addRowPaddock, addRowUnit, simpanData, loadMasterData dsb sama seperti v2.70 dengan penyesuaian)
-    function addRowPaddock(n="", l="") {
-        const div = document.createElement('div'); div.className = 'grid-2'; div.style.marginBottom="5px";
-        div.innerHTML = `<input type="text" class="p-name" value="${n}" placeholder="Paddock"><input type="number" class="p-luas" value="${l}" placeholder="Ha" step="0.01">`;
-        document.getElementById('paddockContainer').appendChild(div);
-    }
-
-    function addRowUnit(n="", k=0, s=0, r=0) {
-        const div = document.createElement('div'); div.className = 'unit-input-row';
-        div.innerHTML = `<input type="text" class="u-nama" value="${n}" placeholder="Unit"><input type="number" class="u-kerja" value="${k}"><input type="number" class="u-stby" value="${s}"><input type="number" class="u-rusak" value="${r}"><button onclick="this.parentElement.remove()" style="color:red; border:none; background:none;">✕</button>`;
-        document.getElementById('unitContainer').appendChild(div);
-    }
-
+    // ---------- SIMPAN DATA ----------
     async function simpanData() {
-        const type = document.querySelector('.tab-menu button.active').innerText.includes('PLAN') ? 'Planning' : 'Hasil';
+        const tgl = document.getElementById('tglLaporan').value;
+        const kegiatan = document.getElementById('kegiatan').value;
+        const paddocks = Array.from(document.querySelectorAll('.p-name')).map((el, i) => ({
+            name: el.value, luas: parseFloat(document.querySelectorAll('.p-luas')[i].value) || 0
+        })).filter(p => p.name !== "");
+        
+        if(!kegiatan) return alert("Kegiatan Kosong!");
+        
         const payload = {
-            tgl: document.getElementById('tglLaporan').value,
-            type: type,
-            kegiatan: document.getElementById('kegiatanSelect').value,
+            tgl, type: currentTab, kegiatan, paddocks, 
             hk: parseInt(document.getElementById('hk').value) || 0,
+            unit: document.getElementById('unitSelect').value,
+            bahan: document.getElementById('bahan').value,
+            dosis: parseFloat(document.getElementById('dosis').value) || 0,
+            totalBahan: parseFloat(document.getElementById('totalBahan').value) || 0,
+            satuan: document.getElementById('satuan').value,
             catatan: document.getElementById('catatan').value,
-            paddocks: Array.from(document.querySelectorAll('.p-name')).map((el, i) => ({
-                name: el.value, luas: parseFloat(document.querySelectorAll('.p-luas')[i].value) || 0
-            })).filter(p => p.name !== ""),
-            units: Array.from(document.querySelectorAll('.u-nama')).map((el, i) => ({
-                nama: el.value,
-                kerja: parseInt(document.querySelectorAll('.u-kerja')[i].value) || 0,
-                stby: parseInt(document.querySelectorAll('.u-stby')[i].value) || 0,
-                rusak: parseInt(document.querySelectorAll('.u-rusak')[i].value) || 0
-            })).filter(u => u.nama !== ""),
-            materials: Array.from(document.querySelectorAll('.b-nama')).map((el, i) => ({
-                nama: el.value,
-                dosis: parseFloat(document.querySelectorAll('.b-dosis')[i].value) || 0,
-                satuan: document.querySelectorAll('.b-satuan')[i].value
-            })).filter(m => m.nama !== "")
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
-        await db.collection("reports_v15").add(payload);
-        alert("Data Berhasil Disimpan!");
-        refreshView();
+
+        await db.collection("reports_v13").add(payload);
+        clearForm();
     }
 
-    function refreshView() {
+    function loadData() {
         const tgl = document.getElementById('tglLaporan').value;
-        const type = document.querySelector('.tab-menu button.active').innerText.includes('PLAN') ? 'Planning' : 'Hasil';
-        db.collection("reports_v15").where("tgl", "==", tgl).where("type", "==", type).onSnapshot(snap => {
-            let h = "";
-            snap.forEach(doc => {
-                const d = doc.data();
-                h += `<div class="card" style="border-left:5px solid var(--primary)">
-                    <div style="display:flex; justify-content:space-between;"><b>${d.kegiatan}</b> <span>${d.hk} HK</span></div>
-                    <div style="display:flex; gap:5px; margin-top:10px;">
-                        <button class="btn-sm" style="background:var(--success)" onclick='copyToWA(${JSON.stringify(d)})'>COPY WA</button>
-                        ${type==='Planning' ? `<button class="btn-sm" style="background:var(--blue)" onclick='copyToHasil(${JSON.stringify(d)})'>COPY KE HASIL</button>` : ''}
-                        <button class="btn-sm" style="background:var(--danger)" onclick="hapusData('${doc.id}')">HAPUS</button>
+        db.collection("reports_v13").where("tgl", "==", tgl).where("type", "==", currentTab).onSnapshot(snap => {
+            let html = ""; let totalHK = 0;
+            const docs = [];
+            snap.forEach(doc => { docs.push({id: doc.id, ...doc.data()}); });
+            // Urutkan default (bisa berdasarkan timestamp)
+            docs.sort((a,b) => (a.updatedAt?.seconds || 0) - (b.updatedAt?.seconds || 0));
+            
+            docs.forEach(d => {
+                totalHK += (d.hk || 0);
+                const sumL = d.paddocks.reduce((a, b) => a + b.luas, 0);
+                const eff = sumL > 0 ? (d.hk / sumL).toFixed(2) : 0;
+                
+                let infoBahan = "";
+                if(d.bahan) {
+                    infoBahan = `<div style="margin-top:5px; background:#e0f2fe; padding:6px; border-radius:6px; font-size:11px;">
+                        🧪 <b>${d.bahan}</b> | Total: ${d.totalBahan} ${d.satuan} | Dosis: ${d.dosis} ${d.satuan}/Ha
+                    </div>`;
+                }
+
+                html += `
+                <div class="live-card" data-id="${d.id}">
+                    <div class="live-header"><b style="text-transform:uppercase;">${d.kegiatan}</b></div>
+                    <div class="paddock-list-detail">
+                        ${d.paddocks.map(p => `<div class="paddock-item"><span>📍 ${p.name}</span> <b>${p.luas} Ha</b></div>`).join("")}
+                        <div style="text-align:right; border-top:1px solid #cbd5e1; margin-top:4px; font-weight:800;">Total: ${sumL.toFixed(2)} Ha</div>
+                    </div>
+                    <div class="stat-grid">
+                        <div class="stat-small"><small>HK</small><br><b>${d.hk}</b></div>
+                        <div class="stat-small"><small>UNIT</small><br><b>${d.unit || "-"}</b></div>
+                        <div class="stat-small eff-badge"><small>HK/Ha</small><br><b>${eff}</b></div>
+                    </div>
+                    ${infoBahan}
+                    ${d.catatan ? `<div style="margin-top:5px; font-size:10px; color:#64748b;">📝 ${d.catatan}</div>` : ""}
+                    <div style="display:flex; justify-content:flex-end; gap:5px; margin-top:10px;">
+                        <button onclick="editTarik('${d.id}')" style="background:var(--blue); color:white; border:none; padding:5px 12px; border-radius:6px; font-size:10px;">EDIT</button>
+                        <button onclick="hapusSatu('${d.id}')" style="background:var(--danger); color:white; border:none; padding:5px 8px; border-radius:6px; font-size:10px;">✕</button>
                     </div>
                 </div>`;
             });
-            document.getElementById('displayList').innerHTML = h;
+            document.getElementById('displayList').innerHTML = html;
+            document.getElementById('footerTotalHK').innerText = `TOTAL HK ${currentTab.toUpperCase()}: ${totalHK}`;
+            
+            // Inisialisasi Sortable untuk drag & drop
+            if (sortableInstance) sortableInstance.destroy();
+            const container = document.getElementById('displayList');
+            sortableInstance = new Sortable(container, {
+                animation: 150,
+                handle: '.live-card',
+                ghostClass: 'live-card',
+                onEnd: function() { /* tidak disimpan permanen */ }
+            });
         });
     }
 
-    async function loadMasterData() {
-        const sk = await db.collection("master_kegiatan").get();
-        masterKegiatan = sk.docs.map(d => ({id:d.id, nama:d.data().nama, type:'kegiatan'}));
-        const sb = await db.collection("master_bahan").get();
-        masterBahan = sb.docs.map(d => ({id:d.id, nama:d.data().nama, type:'bahan'}));
+    // ---------- DASHBOARD ----------
+    async function loadDashboard() {
+        const tgl = document.getElementById('tglDash').value;
+        const snap = await db.collection("reports_v13").where("tgl", "==", tgl).get();
         
-        let html = [...masterKegiatan, ...masterBahan].map(m => `
-            <div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #eee;">
-                <span>[${m.type}] ${m.nama}</span>
-                <button onclick="deleteMaster('${m.type}','${m.id}')" style="color:red; border:none; background:none;">✕</button>
-            </div>`).join("");
-        document.getElementById('masterList').innerHTML = html;
+        let pMap = {}, rMap = {}, hkMap = {}, pDosisMap = {}, rDosisMap = {}, bahanMap = {}, satuanMap = {};
         
-        let opt = `<option value="">-- Pilih Kegiatan --</option>`;
-        masterKegiatan.forEach(k => opt += `<option value="${k.nama}">${k.nama}</option>`);
-        document.getElementById('kegiatanSelect').innerHTML = opt;
+        snap.forEach(doc => {
+            const d = doc.data();
+            const sumL = d.paddocks.reduce((a, b) => a + b.luas, 0);
+            const key = d.kegiatan.toUpperCase().trim();
+            
+            if(d.bahan) { bahanMap[key] = d.bahan; satuanMap[key] = d.satuan; }
+
+            if(d.type === 'Planning') {
+                pMap[key] = (pMap[key] || 0) + sumL;
+                if(d.dosis) pDosisMap[key] = d.dosis;
+            } else if(d.type === 'Hasil') {
+                rMap[key] = (rMap[key] || 0) + sumL; 
+                hkMap[key] = (hkMap[key] || 0) + d.hk;
+                if(d.dosis) rDosisMap[key] = d.dosis;
+            }
+        });
+
+        let html = `<b style="font-size:14px; color:var(--primary);">KOMPARASI DASHBOARD: ${tgl}</b><br><br>`;
+        const keys = [...new Set([...Object.keys(pMap), ...Object.keys(rMap)])];
+        
+        keys.forEach(k => {
+            const p = pMap[k] || 0;
+            const r = rMap[k] || 0;
+            const hk = hkMap[k] || 0;
+            const selisih = r - p;
+            const persen = p > 0 ? ((r / p) * 100).toFixed(1) : (r > 0 ? 100 : 0);
+            const effHK = r > 0 ? (hk / r).toFixed(2) : 0;
+            const dosisP = pDosisMap[k] || 0;
+            const dosisR = rDosisMap[k] || 0;
+            const stn = satuanMap[k] || "";
+
+            html += `<div style="margin-bottom:15px; border-bottom:2px dashed #e2e8f0; padding-bottom:10px;">
+                <div style="font-weight:900; font-size:13px;">📌 ${k}</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px;">
+                    <div class="stat-small"><span>SELISIH</span><br><b>${selisih.toFixed(2)} Ha</b><br>${persen}%</div>
+                    <div class="stat-small"><span>HASIL</span><br><b>${r.toFixed(2)} Ha</b><br>HK/Ha: ${effHK}</div>
+                    <div class="stat-small"><span>PLANNING</span><br><b>${p.toFixed(2)} Ha</b></div>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(persen,100)}%;"></div></div>
+            </div>`;
+        });
+        document.getElementById('listKomparasi').innerHTML = html || "<center>Belum ada data</center>";
     }
 
-    async function addMaster(type) {
-        const val = document.getElementById('newMaster').value;
-        if(!val) return;
-        await db.collection("master_"+type).add({nama: val});
-        document.getElementById('newMaster').value = "";
-        loadMasterData();
+    // ---------- HISTORY (REKAP) + FILTER + CSV ----------
+    async function loadRekap() {
+        const bln = document.getElementById('blnRekap').value;
+        const tipe = document.getElementById('filterTypeRekap').value;
+        const start = document.getElementById('tglStartRekap').value;
+        const end = document.getElementById('tglEndRekap').value;
+        
+        let query = db.collection("reports_v13");
+        if (tipe !== "Semua") query = query.where("type", "==", tipe);
+        
+        const snap = await query.get();
+        let html = ""; let csvRows = [["Tanggal","Kegiatan","Type","Luas(Ha)","HK","Unit","Bahan","TotalBahan","Satuan","Dosis","Catatan"]];
+        
+        snap.forEach(doc => {
+            const d = doc.data();
+            const sumL = d.paddocks.reduce((a, b) => a + b.luas, 0);
+            const tglValid = d.tgl;
+            let include = true;
+            
+            if (bln && !tglValid.startsWith(bln)) include = false;
+            if (start && tglValid < start) include = false;
+            if (end && tglValid > end) include = false;
+            if (!include) return;
+            
+            const eff = sumL > 0 ? (d.hk / sumL).toFixed(2) : 0;
+            html += `<div class="card" style="border-left:4px solid ${d.type==='Planning'?'#3b82f6':'#22c55e'};">
+                <div><b>${d.tgl}</b> | ${d.type} | ${d.kegiatan.toUpperCase()}</div>
+                <div>Luas: ${sumL.toFixed(2)} Ha | HK: ${d.hk} | HK/Ha: ${eff}</div>
+                <div>Unit: ${d.unit||'-'} | Bahan: ${d.bahan||'-'} ${d.totalBahan||''} ${d.satuan||''} (Dosis: ${d.dosis||''})</div>
+            </div>`;
+            
+            csvRows.push([d.tgl, d.kegiatan, d.type, sumL.toFixed(2), d.hk, d.unit||'', d.bahan||'', d.totalBahan||'', d.satuan||'', d.dosis||'', d.catatan||'']);
+        });
+        
+        document.getElementById('listRekap').innerHTML = html || "<center>Tidak ada data.</center>";
+        window.lastCsvData = csvRows;
     }
 
-    async function deleteMaster(type, id) {
-        await db.collection("master_"+type).doc(id).delete();
-        loadMasterData();
+    function downloadCSV() {
+        if (!window.lastCsvData) return alert("Muat data dulu.");
+        let csv = window.lastCsvData.map(row => row.map(cell => `"${cell}"`).join(",")).join("\n");
+        const blob = new Blob(["\uFEFF" + csv], {type: 'text/csv;charset=utf-8;'});
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `rekap_${new Date().toISOString().slice(0,10)}.csv`;
+        link.click();
     }
 
-    async function hapusData(id) { if(confirm("Hapus?")) await db.collection("reports_v15").doc(id).delete(); }
+    // ---------- UNIT MANAGEMENT ----------
+    async function loadUnits() {
+        const snap = await db.collection("units").orderBy("nama").get();
+        let html = "";
+        snap.forEach(doc => {
+            const u = doc.data();
+            const statusClass = u.status === 'Kerja' ? 'status-kerja' : (u.status === 'Rusak' ? 'status-rusak' : 'status-standby');
+            html += `<div class="card" style="padding:10px;">
+                <div style="display:flex; justify-content:space-between;">
+                    <b>${u.nama}</b> <span class="unit-badge ${statusClass}">${u.status}</span>
+                </div>
+                <div style="font-size:11px;">${u.catatan || '-'}</div>
+                <div style="margin-top:8px;">
+                    <button onclick="editUnit('${doc.id}')" style="background:var(--blue); color:white; border:none; padding:5px 12px; border-radius:6px;">Edit</button>
+                    <button onclick="hapusUnit('${doc.id}')" style="background:var(--danger); color:white; border:none; padding:5px 12px; border-radius:6px;">Hapus</button>
+                </div>
+            </div>`;
+        });
+        document.getElementById('listUnit').innerHTML = html || "<center>Belum ada unit.</center>";
+    }
+
+    async function simpanUnit() {
+        const nama = document.getElementById('unitNama').value.trim();
+        if(!nama) return alert("Nama unit harus diisi");
+        await db.collection("units").add({
+            nama, status: document.getElementById('unitStatus').value,
+            catatan: document.getElementById('unitCatatan').value,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        clearUnitForm();
+        loadUnits();
+        populateUnitSelect();
+    }
+
+    function clearUnitForm() {
+        document.getElementById('unitIdEdit').value = '';
+        document.getElementById('unitNama').value = '';
+        document.getElementById('unitStatus').value = 'Kerja';
+        document.getElementById('unitCatatan').value = '';
+        document.getElementById('btnUpdateUnit').style.display = 'none';
+        document.querySelector('#viewUnit .btn-main:not(#btnUpdateUnit)').style.display = 'block';
+    }
+
+    async function editUnit(id) {
+        const doc = await db.collection("units").doc(id).get();
+        const u = doc.data();
+        document.getElementById('unitIdEdit').value = id;
+        document.getElementById('unitNama').value = u.nama;
+        document.getElementById('unitStatus').value = u.status;
+        document.getElementById('unitCatatan').value = u.catatan || '';
+        document.getElementById('btnUpdateUnit').style.display = 'block';
+        document.querySelector('#viewUnit .btn-main:not(#btnUpdateUnit)').style.display = 'none';
+    }
+
+    async function updateUnit() {
+        const id = document.getElementById('unitIdEdit').value;
+        await db.collection("units").doc(id).update({
+            nama: document.getElementById('unitNama').value,
+            status: document.getElementById('unitStatus').value,
+            catatan: document.getElementById('unitCatatan').value
+        });
+        clearUnitForm();
+        loadUnits();
+        populateUnitSelect();
+    }
+
+    async function hapusUnit(id) {
+        if(confirm('Hapus unit?')) {
+            await db.collection("units").doc(id).delete();
+            loadUnits();
+            populateUnitSelect();
+        }
+    }
+
+    // ---------- UTILS LAIN ----------
+    function hapusSatu(id) { if(confirm("Hapus?")) db.collection("reports_v13").doc(id).delete(); }
+    
+    function editTarik(id) {
+        db.collection("reports_v13").doc(id).get().then(doc => {
+            const d = doc.data();
+            document.getElementById('editId').value = doc.id;
+            document.getElementById('kegiatan').value = d.kegiatan;
+            document.getElementById('hk').value = d.hk || "";
+            document.getElementById('unitSelect').value = d.unit || "";
+            document.getElementById('bahan').value = d.bahan || "";
+            document.getElementById('dosis').value = d.dosis || "";
+            document.getElementById('totalBahan').value = d.totalBahan || "";
+            document.getElementById('satuan').value = d.satuan || "L";
+            document.getElementById('catatan').value = d.catatan || "";
+            document.getElementById('paddockContainer').innerHTML = "";
+            d.paddocks.forEach(p => addRow('paddockContainer', p.name, p.luas));
+            document.getElementById('btnSimpan').style.display = "none";
+            document.getElementById('btnUpdate').style.display = "block";
+            window.scrollTo(0,0);
+        });
+    }
+
+    async function updateData() {
+        const id = document.getElementById('editId').value;
+        const paddocks = Array.from(document.querySelectorAll('.p-name')).map((el, i) => ({
+            name: el.value, luas: parseFloat(document.querySelectorAll('.p-luas')[i].value) || 0
+        })).filter(p => p.name !== "");
+        await db.collection("reports_v13").doc(id).update({
+            kegiatan: document.getElementById('kegiatan').value, paddocks,
+            hk: parseInt(document.getElementById('hk').value) || 0,
+            unit: document.getElementById('unitSelect').value,
+            bahan: document.getElementById('bahan').value,
+            dosis: parseFloat(document.getElementById('dosis').value) || 0,
+            totalBahan: parseFloat(document.getElementById('totalBahan').value) || 0,
+            satuan: document.getElementById('satuan').value,
+            catatan: document.getElementById('catatan').value,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        clearForm();
+    }
+
+    function clearForm() {
+        document.getElementById('editId').value = ""; 
+        document.getElementById('kegiatan').value = "";
+        document.getElementById('hk').value = ""; 
+        document.getElementById('unitSelect').value = ""; 
+        document.getElementById('bahan').value = ""; 
+        document.getElementById('dosis').value = ""; 
+        document.getElementById('totalBahan').value = ""; 
+        document.getElementById('catatan').value = "";
+        document.getElementById('paddockContainer').innerHTML = `<div class="card" style="background:#f1f5f9; padding:10px;"><input type="text" class="p-name" placeholder="Paddock" oninput="hitungTotalBahan()"><input type="number" class="p-luas" placeholder="Luas (Ha)" step="0.01" oninput="hitungTotalBahan()"></div>`;
+        document.getElementById('btnUpdate').style.display = "none"; 
+        document.getElementById('btnSimpan').style.display = "block";
+    }
+
+    async function salinWA() { /* ... sama seperti sebelumnya ... */ 
+        const tgl = document.getElementById('tglLaporan').value;
+        const snap = await db.collection("reports_v13").where("tgl", "==", tgl).where("type", "==", currentTab).get();
+        if(snap.empty) return alert("Tidak ada data.");
+        let text = `*LAPORAN ${currentTab.toUpperCase()}*\nTanggal: ${tgl}\n\n`;
+        snap.forEach(doc => {
+            const d = doc.data(); const sumL = d.paddocks.reduce((a,b)=>a+b.luas,0);
+            text += `*${d.kegiatan}*\n` + d.paddocks.map(p=>`- ${p.name} : ${p.luas} Ha`).join('\n');
+            text += `\nTotal Ha: ${sumL.toFixed(2)} | HK: ${d.hk} | HK/Ha: ${(d.hk/sumL).toFixed(2)}\n`;
+            if(d.unit) text += `Unit: ${d.unit}\n`;
+            if(d.bahan) text += `Bahan: ${d.bahan} ${d.totalBahan} ${d.satuan} (Dosis: ${d.dosis})\n`;
+            text += `\n`;
+        });
+        navigator.clipboard.writeText(text).then(()=>alert("✅ Tersalin!"));
+    }
+
+    async function copyToHasil() {
+        const tgl = document.getElementById('tglLaporan').value;
+        const snap = await db.collection("reports_v13").where("tgl", "==", tgl).where("type", "==", "Planning").get();
+        if(snap.empty) return alert("Tidak ada planning.");
+        if(!confirm("Salin planning ke hasil?")) return;
+        let batch = db.batch();
+        snap.forEach(doc => {
+            const d = doc.data(); d.type = "Hasil";
+            batch.set(db.collection("reports_v13").doc(), d);
+        });
+        await batch.commit();
+        alert("✅ Tersalin ke Hasil!");
+        switchTab('Hasil');
+    }
+
+    function downloadDashJPG() {
+        html2canvas(document.getElementById("captureArea")).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `Dashboard_${document.getElementById('tglDash').value}.jpg`;
+            link.href = canvas.toDataURL('image/jpeg');
+            link.click();
+        });
+    }
 
     // Init
-    const today = new Date().toISOString().split('T')[0];
-    ['tglLaporan', 'tglDash', 'tglRekap'].forEach(id => document.getElementById(id).value = today);
-    loadMasterData();
+    const tdy = new Date().toISOString().split('T')[0];
+    document.getElementById('tglLaporan').value = tdy;
+    document.getElementById('tglDash').value = tdy;
+    document.getElementById('blnRekap').value = tdy.slice(0,7);
     switchTab('Dash');
 </script>
 </body>
