@@ -617,7 +617,7 @@ async function analisaDashboardAI() {
     }
 
     // 1. Susun Prompt (Instruksi) untuk AI
-    let promptData = `Anda adalah Asisten Manajer Pertanian spesialis Upkeep & Manuring. Analisa data harian tanggal ${tgl} berikut (Perbandingan Planning vs Aktual):\n\n`;
+    let promptData = `Anda adalah Asisten Manajer Pertanian spesialis Upkeep & Manuring. Analisa data harian tanggal ${tgl} berikut:\n\n`;
     
     for (let keg in lastDashboardData) {
         const d = lastDashboardData[keg];
@@ -625,7 +625,6 @@ async function analisaDashboardAI() {
         const hkPerHaPlan = d.pLuas > 0 ? (d.pHK / d.pLuas).toFixed(2) : 0;
         const hkPerHaHasil = d.hLuas > 0 ? (d.hHK / d.hLuas).toFixed(2) : 0;
         
-        // Hitung selisih luasan agar AI lebih paham konteks defisit/surplus
         const selisihLuas = (d.hLuas - d.pLuas).toFixed(2);
         const statusLuas = selisihLuas >= 0 ? `(+${selisihLuas} Ha Surplus)` : `(${selisihLuas} Ha Defisit)`;
 
@@ -635,41 +634,49 @@ async function analisaDashboardAI() {
     }
     
     promptData += `Tolong berikan analisa terstruktur dengan format berikut:\n`;
-    promptData += `1. **Evaluasi Target Luasan:** Sebutkan kegiatan yang berhasil capai target dan soroti tajam kegiatan yang *underperform* (defisit luasan). Sebutkan angka defisitnya.\n`;
-    promptData += `2. **Evaluasi Efisiensi HK:** Analisa rasio HK/Ha. Soroti jika ada pemborosan (HK tinggi tapi luasan sedikit) atau jika sangat efisien.\n`;
-    promptData += `3. **Rekomendasi Operasional:** Berikan 2-3 saran tegas untuk pengawas lapangan/mandor besok (misal: perlu cek breakdown traktor, evaluasi kinerja orang, atau realokasi HK).\n`;
-    promptData += `Gunakan bahasa Indonesia yang profesional, tegas, dan langsung ke intinya. Gunakan format bold untuk memperjelas.`;
+    promptData += `1. **Evaluasi Target Luasan:** Sebutkan kegiatan capai target dan soroti tajam yang defisit.\n`;
+    promptData += `2. **Evaluasi Efisiensi HK:** Analisa rasio HK/Ha. Soroti jika ada pemborosan.\n`;
+    promptData += `3. **Rekomendasi Operasional:** Berikan 2-3 saran tegas untuk pengawas lapangan/mandor besok terkait mekanisasi atau alokasi tenaga manual.\n`;
+    promptData += `Gunakan bahasa Indonesia yang profesional, tegas, dan langsung ke intinya.`;
 
-    // 2. Panggil API Gemini
-    // Jangan lupa masukkan API Key Anda di sini
-    const API_KEY = "AIzaSyD_PZ_R9YUo2mjckSR5gPUROTO7nEtAYH4"; 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+    // 2. MENGGUNAKAN API OPENROUTER
+    // Ganti teks di bawah dengan API Key dari OpenRouter (sk-or-v1-...)
+    const API_KEY = "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"; 
+    const url = `https://openrouter.ai/api/v1/chat/completions`;
 
     try {
         const response = await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${API_KEY}`,
+                'HTTP-Referer': window.location.href, 
+                'X-Title': 'Monitoring Upkeep App'
+            },
             body: JSON.stringify({
-                contents: [{ parts: [{ text: promptData }] }]
+                // Kita memanggil model Llama 3 8B (Gratis, Pintar, dan Cepat)
+                "model": "meta-llama/llama-3-8b-instruct:free", 
+                "messages": [{ "role": "user", "content": promptData }]
             })
         });
         
         const result = await response.json();
         
         if (result.error) {
-            throw new Error(result.error.message);
+            throw new Error(result.error.message || "Gagal memuat AI.");
         }
 
-        const aiResponse = result.candidates[0].content.parts[0].text;
+        // Jalur data respon dari OpenRouter sedikit berbeda dari Google
+        const aiResponse = result.choices[0].message.content;
         
-        // Format output markdown (*) menjadi HTML (<b> dan <br>)
+        // Format output
         aiText.innerHTML = aiResponse
             .replace(/\n/g, '<br>')
             .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
             .replace(/\*(.*?)\*/g, '<i>$1</i>');
             
     } catch (error) {
-        aiText.innerHTML = `<span style="color:red;"><b>Gagal memanggil AI.</b><br>Pastikan API Key valid dan internet stabil.<br>Error: ${error.message}</span>`;
+        aiText.innerHTML = `<span style="color:red;"><b>Gagal memanggil AI.</b><br>Pastikan API Key OpenRouter valid.<br>Pesan sistem: ${error.message}</span>`;
     }
 }
     // RUN ON STARTUP
