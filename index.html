@@ -588,37 +588,44 @@ function downloadCSV() {
     }
 
     // --- MULAI PASTE FUNGSI BARU DI SINI (TIDAK ADA KODE HTML SAMA SEKALI) ---
-   async function copySatuKegiatan(id) {
-    const targetTgl = document.getElementById('copyTgl_' + id).value;
-    
-    if (!targetTgl) {
-        return alert("⚠️ Pilih tanggal tujuan copy terlebih dahulu!");
-    }
+  async function copySatuKegiatan(id) {
+        const inputDate = document.getElementById('copyTgl_' + id);
+        const targetTgl = inputDate.value;
+        
+        if (!targetTgl) {
+            alert("⚠️ Pilih tanggal tujuan copy terlebih dahulu!");
+            return;
+        }
 
-    if (confirm(`Copy kegiatan ini ke tanggal ${formatTglIndo(targetTgl)}?`)) {
-        try {
-            const doc = await db.collection("reports_v13").doc(id).get();
-            if (doc.exists) {
-                let newData = doc.data();
+        if (confirm("Yakin ingin menyalin kegiatan ini ke tanggal " + targetTgl + "?")) {
+            try {
+                // Ambil data asli
+                const doc = await db.collection("reports_v13").doc(id).get();
                 
-                // Set tanggal ke tujuan tapi tetap simpan data lainnya
-                newData.tgl = targetTgl;
-                newData.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
-                
-                await db.collection("reports_v13").add(newData);
-                
-                // Hanya tampilkan notifikasi sukses, TIDAK pindah halaman
-                alert(`✅ Berhasil menyalin ke tanggal ${formatTglIndo(targetTgl)}. Anda tetap di halaman ini.`);
-                
-                // Opsional: Kosongkan kembali input tanggal setelah copy agar tidak tertukar
-                document.getElementById('copyTgl_' + id).value = "";
+                if (doc.exists) {
+                    let newData = doc.data();
+                    
+                    // Ubah tanggal dan update timestamp
+                    newData.tgl = targetTgl;
+                    newData.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+                    
+                    // Simpan data duplikat ke database
+                    await db.collection("reports_v13").add(newData);
+                    
+                    // Munculkan notifikasi sukses tanpa memindahkan halaman
+                    alert("✅ Data berhasil disalin ke " + targetTgl + ". Anda tetap berada di halaman ini.");
+                    
+                    // Kosongkan kotak tanggal setelah sukses dicopy
+                    inputDate.value = "";
+                } else {
+                    alert("❌ Gagal: Data asli tidak ditemukan!");
+                }
+            } catch(error) {
+                console.error("Error copy: ", error);
+                alert("❌ Terjadi kesalahan saat menyalin data.");
             }
-        } catch(e) {
-            console.error("Error copying data: ", e);
-            alert("❌ Gagal melakukan copy data.");
         }
     }
-}
     // --- AKHIR FUNGSI BARU ---
 
     // RUN ON STARTUP
