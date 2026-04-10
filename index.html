@@ -320,51 +320,46 @@
     }
 
     function loadData() {
-        const tgl = document.getElementById('tglLaporan').value;
-        db.collection("reports_v13").where("tgl", "==", tgl).where("type", "==", currentTab).onSnapshot(snap => {
-            let listHtml = ""; let totalHK = 0; const items = []; 
-            snap.forEach(doc => items.push({id: doc.id, ...doc.data()}));
-            items.sort((a,b) => (a.updatedAt?.seconds || 0) - (b.updatedAt?.seconds || 0));
-            
-            items.forEach(d => {
-                totalHK += (d.hk || 0); 
-                const sumL = d.paddocks.reduce((a, b) => a + (parseFloat(b.luas) || 0), 0);
-                
-                // Compatibility untuk data bahan lama (string) dan baru (object)
-                const bahanList = d.bahans.map(b => typeof b === 'object' ? `${b.name} (${b.total})` : b).join(", ");
+    const tgl = document.getElementById('tglLaporan').value;
+    db.collection("reports_v13").where("tgl", "==", tgl).where("type", "==", currentTab).onSnapshot(snap => {
+        let listHtml = ""; let totalHK = 0; const items = []; 
+        snap.forEach(doc => items.push({id: doc.id, ...doc.data()}));
+        items.sort((a,b) => (a.updatedAt?.seconds || 0) - (b.updatedAt?.seconds || 0));
+        
+        items.forEach(d => {
+            totalHK += (d.hk || 0); 
+            const sumL = d.paddocks.reduce((a, b) => a + (parseFloat(b.luas) || 0), 0);
+            const bahanList = d.bahans.map(b => typeof b === 'object' ? `${b.name} (${b.total})` : b).join(", ");
 
-                listHtml += `<div class="acc-item" data-id="${d.id}">
-                    <div class="acc-main-row">
-                        <div class="acc-header" onclick="toggleAcc('${d.id}')">📝 ${d.kegiatan || "Tanpa Nama"} (${sumL.toFixed(2)} Ha)</div>
-                        <div class="order-controls">
-                            <button class="btn-order" onclick="moveOrder(this, 'up')">▲</button>
-                            <button class="btn-order" onclick="moveOrder(this, 'down')">▼</button>
-                        </div>
+            listHtml += `<div class="acc-item" data-id="${d.id}">
+                <div class="acc-main-row">
+                    <div class="acc-header" onclick="toggleAcc('${d.id}')">📝 ${d.kegiatan || "Kegiatan Kosong"} (${sumL.toFixed(2)} Ha)</div>
+                    <div class="order-controls">
+                        <button class="btn-order" onclick="moveOrder(this, 'up')">▲</button>
+                        <button class="btn-order" onclick="moveOrder(this, 'down')">▼</button>
                     </div>
-                    <div class="acc-body" id="body-${d.id}">
-                        📍 Pdk: ${d.paddocks.map(p => `${p.name} (${p.luas || 0} Ha)`).join(", ")}<br>
-                        👷 HK: ${d.hk || 0} | 🚜 Alat: ${d.unit || "-"}<br>
-                        ⚙️ Stat: 🟢${d.jln || 0} | 🔴${d.rsk || 0} | 🟡${d.std || 0}<br>
-                        🧪 Bahan: ${bahanList || "-"}<br>
-                        ℹ️ Ket: ${d.ket || "-"}<br>
-                        
-                        <div class="btn-group-detail">
-                            <button onclick="tarikKeForm('${d.id}')" style="background:#3b82f6; color:white; border:none; padding:10px; flex:1; border-radius:8px; font-weight:bold; cursor:pointer;">EDIT</button>
-                            <button onclick="hapusSatuKegiatan('${d.id}')" style="background:var(--danger); color:white; border:none; padding:10px; flex:1; border-radius:8px; font-weight:bold; cursor:pointer;">HAPUS</button>
-                        </div>
-                        
-                        <div style="display:flex; gap:8px; margin-top:8px; background:#f1f5f9; padding:8px; border-radius:8px; border: 1px solid #cbd5e1;">
-                            <input type="date" id="copyTgl_${d.id}" style="flex:1; border:none; border-radius:6px; padding:8px; outline:none; font-family:inherit;">
-                            <button onclick="copySatuKegiatan('${d.id}')" style="background:#f59e0b; color:white; border:none; padding:8px 12px; border-radius:6px; font-weight:bold; cursor:pointer;">COPY KE TGL</button>
-                        </div>
-                        
+                </div>
+                <div class="acc-body" id="body-${d.id}">
+                    📍 Pdk: ${d.paddocks.map(p => `${p.name} (${p.luas || 0} Ha)`).join(", ")}<br>
+                    👷 HK: ${d.hk || 0} | 🚜 Alat: ${d.unit || "-"}<br>
+                    ⚙️ Stat: 🟢${d.jln || 0} | 🔴${d.rsk || 0} | 🟡${d.std || 0}<br>
+                    🧪 Bahan: ${bahanList || "-"}<br>
+                    ℹ️ Ket: ${d.ket || "-"}<br>
+                    <div class="btn-group-detail">
+                        <button onclick="tarikKeForm('${d.id}')" style="background:#3b82f6; color:white; border:none; padding:10px; flex:1; border-radius:8px; font-weight:bold; cursor:pointer;">EDIT</button>
+                        <button onclick="hapusSatuKegiatan('${d.id}')" style="background:var(--danger); color:white; border:none; padding:10px; flex:1; border-radius:8px; font-weight:bold; cursor:pointer;">HAPUS</button>
                     </div>
-                </div>`;
-            });
-            document.getElementById('displayList').innerHTML = listHtml;
-            document.getElementById('footerTotalHK').innerText = `TOTAL HK ${currentTab.toUpperCase()}: ${totalHK} 👷`;
+                    <div style="display:flex; gap:8px; margin-top:8px; background:#f1f5f9; padding:8px; border-radius:8px; border: 1px solid #cbd5e1;">
+                        <input type="date" id="copyTgl_${d.id}" style="flex:1; border:none; border-radius:6px; padding:8px; outline:none; font-family:inherit;">
+                        <button onclick="copySatuKegiatan('${d.id}')" style="background:#f59e0b; color:white; border:none; padding:8px 12px; border-radius:6px; font-weight:bold; cursor:pointer;">COPY KE TGL</button>
+                    </div>
+                </div>
+            </div>`;
         });
-    }
+        document.getElementById('displayList').innerHTML = listHtml;
+        document.getElementById('footerTotalHK').innerText = `TOTAL HK ${currentTab.toUpperCase()}: ${totalHK} 👷`;
+    });
+}
     async function simpanData(isUpdate) {
         const tgl = document.getElementById('tglLaporan').value;
         const paddocks = Array.from(document.querySelectorAll('.paddock-item')).map(el => ({
@@ -593,40 +588,37 @@ function downloadCSV() {
     }
 
     // --- MULAI PASTE FUNGSI BARU DI SINI (TIDAK ADA KODE HTML SAMA SEKALI) ---
-    async function copySatuKegiatan(id) {
-        const targetTgl = document.getElementById('copyTgl_' + id).value;
-        
-        // Validasi apakah user sudah memilih tanggal
-        if (!targetTgl) {
-            return alert("⚠️ Pilih tanggal tujuan copy terlebih dahulu!");
-        }
+   async function copySatuKegiatan(id) {
+    const targetTgl = document.getElementById('copyTgl_' + id).value;
+    
+    if (!targetTgl) {
+        return alert("⚠️ Pilih tanggal tujuan copy terlebih dahulu!");
+    }
 
-        if (confirm(`Copy kegiatan ini ke tanggal ${formatTglIndo(targetTgl)}?`)) {
-            try {
-                // Ambil data spesifik berdasarkan ID
-                const doc = await db.collection("reports_v13").doc(id).get();
-                if (doc.exists) {
-                    let newData = doc.data();
-                    
-                    // Ubah tanggal menjadi tanggal target dan perbarui timestamp
-                    newData.tgl = targetTgl;
-                    newData.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
-                    
-                    // Simpan sebagai dokumen baru di database
-                    await db.collection("reports_v13").add(newData);
-                    
-                    // Tawarkan user apakah ingin langsung melompat ke tanggal tujuan
-                    if(confirm("✅ Berhasil dicopy! Apakah Anda ingin pindah melihat tanggal tersebut?")) {
-                        document.getElementById('tglLaporan').value = targetTgl;
-                        loadData(); // Reload list dengan tanggal yang baru
-                    }
-                }
-            } catch(e) {
-                console.error("Error copying data: ", e);
-                alert("❌ Gagal melakukan copy data.");
+    if (confirm(`Copy kegiatan ini ke tanggal ${formatTglIndo(targetTgl)}?`)) {
+        try {
+            const doc = await db.collection("reports_v13").doc(id).get();
+            if (doc.exists) {
+                let newData = doc.data();
+                
+                // Set tanggal ke tujuan tapi tetap simpan data lainnya
+                newData.tgl = targetTgl;
+                newData.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+                
+                await db.collection("reports_v13").add(newData);
+                
+                // Hanya tampilkan notifikasi sukses, TIDAK pindah halaman
+                alert(`✅ Berhasil menyalin ke tanggal ${formatTglIndo(targetTgl)}. Anda tetap di halaman ini.`);
+                
+                // Opsional: Kosongkan kembali input tanggal setelah copy agar tidak tertukar
+                document.getElementById('copyTgl_' + id).value = "";
             }
+        } catch(e) {
+            console.error("Error copying data: ", e);
+            alert("❌ Gagal melakukan copy data.");
         }
     }
+}
     // --- AKHIR FUNGSI BARU ---
 
     // RUN ON STARTUP
