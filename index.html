@@ -248,6 +248,7 @@
         });
     }
 // 1. FUNGSI UNTUK TAMBAH MASTER (KEGIATAN ATAU BAHAN)
+// 1. FUNGSI UNTUK TAMBAH MASTER (KEGIATAN ATAU BAHAN)
 async function addMaster(type) {
     const inputId = type === 'kegiatan' ? 'newKegiatan' : 'newBahan';
     const collectionName = type === 'kegiatan' ? 'master_kegiatan_v13' : 'master_bahan_v13';
@@ -291,41 +292,6 @@ async function editMasterKegiatan(id, oldName, oldStd) {
         alert("Berhasil diperbarui!");
     } catch (e) {
         alert("Gagal update: " + e.message);
-    }
-}
-// FUNGSI BARU: EDIT KEGIATAN
-async function editMasterKegiatan(id, oldName, oldStd) {
-    const newName = prompt("Ubah Nama Kegiatan:", oldName);
-    if (newName === null) return; // Batal
-    
-    const newStd = prompt("Ubah Standar HK/Ha:", oldStd);
-    if (newStd === null) return; // Batal
-
-    if (!newName.trim()) return alert("Nama tidak boleh kosong!");
-
-    try {
-        await db.collection("master_kegiatan_v13").doc(id).update({
-            name: newName.trim(),
-            stdHkHa: parseFloat(newStd) || 0
-        });
-        alert("Berhasil diperbarui!");
-    } catch (e) {
-        alert("Gagal update: " + e.message);
-    }
-}
-        
-        await db.collection("master_kegiatan_v13").add({
-            name: name,
-            stdHkHa: std // Menyimpan nilai standar
-        });
-        document.getElementById('newKegiatan').value = "";
-        document.getElementById('newStdHkHa').value = "";
-    } else {
-        // Logic untuk bahan tetap sama
-        const val = document.getElementById('newBahan').value.trim();
-        if(!val) return alert("Nama tidak boleh kosong!");
-        await db.collection("master_bahan_v13").add({name: val});
-        document.getElementById('newBahan').value = "";
     }
 }
 
