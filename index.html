@@ -128,17 +128,9 @@
         <label style="font-weight:bold; color:var(--primary);">Pilih Tanggal Dashboard:</label>
         <input type="date" id="tglDashboard" onchange="renderDashboard()" style="width:100%; margin-top:8px; font-weight:bold; color:var(--primary); border:1px solid #cbd5e1;">
     </div>
-    
-    <button class="btn-main" style="margin-bottom:10px; background:#0ea5e9;" onclick="downloadDashboardJPG()">📸 DOWNLOAD DASHBOARD (JPG)</button>
-    <button class="btn-main" style="margin-bottom:15px; background:#8b5cf6;" onclick="analisaDashboardAI()">🤖 MINTA ANALISA AI</button>
-
-    <div id="aiAnalysisResult" style="display:none; background: #f8fafc; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #8b5cf6;">
-        <h3 style="margin-top:0; color:#6d28d9; border-bottom: 2px solid #ddd; padding-bottom: 5px;">📊 Hasil Analisa AI</h3>
-        <div id="aiText" style="line-height: 1.6;">Sedang menganalisa...</div>
-    </div>
-
+    <button class="btn-main" style="margin-bottom:15px; background:#0ea5e9;" onclick="downloadDashboardJPG()">📸 DOWNLOAD DASHBOARD (JPG)</button>
     <div id="dashboardArea" style="background: white; padding: 10px; border-radius: 10px;">
-    </div>
+        </div>
 </div>
 
 <div id="viewRekap" style="display:none;">
@@ -194,7 +186,6 @@
     const db = firebase.firestore();
     
     let currentTab = "Planning";
-    let lastDashboardData = {};
     let dataHistoryGlobal = [];
     let masterKegiatan = [];
     let masterBahan = [];
@@ -343,12 +334,14 @@
                 const bahanList = d.bahans.map(b => typeof b === 'object' ? `${b.name} (${b.total})` : b).join(", ");
 
                 listHtml += `<div class="acc-item" data-id="${d.id}">
-                    <div class="acc-main-row">
-                        <div class="acc-header" onclick="toggleAcc('${d.id}')">📝 ${d.kegiatan} (${sumL.toFixed(2)} Ha)</div>
-                        <div class="order-controls">
-                            <button class="btn-order" onclick="moveOrder(this, 'up')">▲</button>
-                            <button class="btn-order" onclick="moveOrder(this, 'down')">▼</button>
-                        </div>
+                    <div class="btn-group-detail">
+                    <button onclick="tarikKeForm('${d.id}')" style="background:#3b82f6; color:white; border:none; padding:10px; flex:1; border-radius:8px; font-weight:bold; cursor:pointer;">EDIT</button>
+                    <button onclick="hapusSatuKegiatan('${d.id}')" style="background:var(--danger); color:white; border:none; padding:10px; flex:1; border-radius:8px; font-weight:bold; cursor:pointer;">HAPUS</button>
+                </div>
+                <div style="display:flex; gap:8px; margin-top:8px; background:#f1f5f9; padding:8px; border-radius:8px; border: 1px solid #cbd5e1;">
+                    <input type="date" id="copyTgl_${d.id}" style="flex:1; border:none; border-radius:6px; padding:8px; outline:none; font-family:inherit;">
+                    <button onclick="copySatuKegiatan('${d.id}')" style="background:#f59e0b; color:white; border:none; padding:8px 12px; border-radius:6px; font-weight:bold; cursor:pointer;">COPY KE TGL</button>
+                </div>
                     </div>
                     <div class="acc-body" id="body-${d.id}">
                         📍 Pdk: ${d.paddocks.map(p => `${p.name} (${p.luas || 0} Ha)`).join(", ")}<br>
@@ -424,33 +417,25 @@
         });
     }
 
-// DASHBOARD & FLOWCHART
+    // DASHBOARD & FLOWCHART
     async function renderDashboard() {
         const tgl = document.getElementById('tglDashboard').value;
         const qPlan = await db.collection("reports_v13").where("tgl", "==", tgl).where("type", "==", "Planning").get();
         const qHasil = await db.collection("reports_v13").where("tgl", "==", tgl).where("type", "==", "Hasil").get();
         
-        // 1. Buat variabel mapData kosong
         let mapData = {};
-        
-        // 2. Isi mapData dengan data Planning
         qPlan.forEach(doc => {
             const d = doc.data();
             if(!mapData[d.kegiatan]) mapData[d.kegiatan] = { pLuas: 0, pHK: 0, hLuas: 0, hHK: 0 };
             mapData[d.kegiatan].pLuas += d.paddocks.reduce((sum, p) => sum + parseFloat(p.luas), 0);
             mapData[d.kegiatan].pHK += d.hk;
         });
-        
-        // 3. Isi mapData dengan data Hasil
         qHasil.forEach(doc => {
             const d = doc.data();
             if(!mapData[d.kegiatan]) mapData[d.kegiatan] = { pLuas: 0, pHK: 0, hLuas: 0, hHK: 0 };
             mapData[d.kegiatan].hLuas += d.paddocks.reduce((sum, p) => sum + parseFloat(p.luas), 0);
             mapData[d.kegiatan].hHK += d.hk;
         });
-
-        // 4. Simpan ke memori global untuk dibaca AI
-        lastDashboardData = mapData;
 
         let html = `<div style="text-align:center; margin-bottom:10px; font-weight:bold;">Perbandingan Tanggal: ${formatTglIndo(tgl)}</div>`;
         
@@ -466,6 +451,7 @@
             const hkPerHaPlan = d.pLuas > 0 ? (d.pHK / d.pLuas).toFixed(2) : 0;
             const hkPerHaHasil = d.hLuas > 0 ? (d.hHK / d.hLuas).toFixed(2) : 0;
 
+            // PERBAIKAN: Persentase perbandingan sekarang menggunakan HK/Ha
             const pctHKPerHa = hkPerHaPlan > 0 ? ((hkPerHaHasil / hkPerHaPlan) * 100).toFixed(0) : 0;
 
             // Logika Badge
@@ -590,7 +576,7 @@
         const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = `History_Upkeep.csv`; a.click();
     }
 
-    function downloadCSV() {
+function downloadCSV() {
         const tgl = document.getElementById('tglLaporan').value;
         let csv = "Kegiatan,Paddock,Luas,HK,Unit,Ready,Breakdown,Standby,Bahan,Keterangan\n";
         db.collection("reports_v13").where("tgl", "==", tgl).where("type", "==", currentTab).get().then(snap => {
@@ -601,92 +587,44 @@
             const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = `Upkeep_${tgl}.csv`; a.click();
         });
     }
-async function analisaDashboardAI() {
-    const tgl = document.getElementById('tglDashboard').value;
-    const aiContainer = document.getElementById('aiAnalysisResult');
-    const aiText = document.getElementById('aiText');
-    
-    // Tampilkan kotak loading
-    aiContainer.style.display = 'block';
-    aiText.innerHTML = '<i>🤖 Sedang mengevaluasi data target luasan dan efisiensi HK... Mohon tunggu sebentar.</i>';
 
-    // Cek apakah ada data
-    if (Object.keys(lastDashboardData).length === 0) {
-        aiText.innerHTML = "Tidak ada data operasional di tanggal ini untuk dianalisa.";
-        return;
-    }
-
-    // 1. Susun Prompt (Instruksi) untuk AI
-    let promptData = `Anda adalah Asisten Manajer Pertanian spesialis Upkeep & Manuring. Analisa data harian tanggal ${tgl} berikut:\n\n`;
-    
-    for (let keg in lastDashboardData) {
-        const d = lastDashboardData[keg];
-        const pctLuas = d.pLuas > 0 ? ((d.hLuas / d.pLuas) * 100).toFixed(0) : 0;
-        const hkPerHaPlan = d.pLuas > 0 ? (d.pHK / d.pLuas).toFixed(2) : 0;
-        const hkPerHaHasil = d.hLuas > 0 ? (d.hHK / d.hLuas).toFixed(2) : 0;
+    // --- MULAI PASTE FUNGSI BARU DI SINI (TIDAK ADA KODE HTML SAMA SEKALI) ---
+    async function copySatuKegiatan(id) {
+        const targetTgl = document.getElementById('copyTgl_' + id).value;
         
-        const selisihLuas = (d.hLuas - d.pLuas).toFixed(2);
-        const statusLuas = selisihLuas >= 0 ? `(+${selisihLuas} Ha Surplus)` : `(${selisihLuas} Ha Defisit)`;
-
-        promptData += `- Kegiatan: ${keg}\n`;
-        promptData += `  * Target Luasan: Plan ${d.pLuas.toFixed(2)} Ha vs Aktual ${d.hLuas.toFixed(2)} Ha. (Pencapaian: ${pctLuas}% | ${statusLuas})\n`;
-        promptData += `  * Efisiensi HK: Plan ${d.pHK} HK (Rasio: ${hkPerHaPlan} HK/Ha) vs Aktual ${d.hHK} HK (Rasio: ${hkPerHaHasil} HK/Ha)\n\n`;
-    }
-    
-    promptData += `Tolong berikan analisa terstruktur dengan format berikut:\n`;
-    promptData += `1. **Evaluasi Target Luasan:** Sebutkan kegiatan capai target dan soroti tajam yang defisit.\n`;
-    promptData += `2. **Evaluasi Efisiensi HK:** Analisa rasio HK/Ha. Soroti jika ada pemborosan.\n`;
-    promptData += `3. **Rekomendasi Operasional:** Berikan 2-3 saran tegas untuk pengawas lapangan/mandor besok terkait mekanisasi atau alokasi tenaga manual.\n`;
-    promptData += `Gunakan bahasa Indonesia yang profesional, tegas, dan langsung ke intinya.`;
-
-    // 2. MENGGUNAKAN API OPENROUTER
-    // Ganti teks di bawah dengan API Key dari OpenRouter (sk-or-v1-...)
-    // 2. MENGGUNAKAN AI DARI GITHUB MODELS (GPT-4o-Mini)
-    // Masukkan token GitHub Anda yang berawalan ghp_ di bawah ini
-    const API_KEY = "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"; 
-    const url = `https://models.inference.ai.azure.com/chat/completions`;
-
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${API_KEY}`
-            },
-            body: JSON.stringify({
-                "model": "gpt-4o-mini", // Model AI cerdas dan cepat dari OpenAI via GitHub
-                "messages": [
-                    { 
-                        "role": "system", 
-                        "content": "Anda adalah Asisten Manajer Pertanian spesialis Upkeep & Manuring." 
-                    },
-                    { 
-                        "role": "user", 
-                        "content": promptData 
-                    }
-                ],
-                "temperature": 0.3
-            })
-        });
-        
-        const result = await response.json();
-        
-        if (result.error) {
-            throw new Error(result.error.message || "Gagal memuat AI.");
+        // Validasi apakah user sudah memilih tanggal
+        if (!targetTgl) {
+            return alert("⚠️ Pilih tanggal tujuan copy terlebih dahulu!");
         }
 
-        const aiResponse = result.choices[0].message.content;
-        
-        // Format output teks dari AI ke HTML
-        aiText.innerHTML = aiResponse
-            .replace(/\n/g, '<br>')
-            .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-            .replace(/\*(.*?)\*/g, '<i>$1</i>');
-            
-    } catch (error) {
-        aiText.innerHTML = `<span style="color:red;"><b>Gagal memanggil AI.</b><br>Pastikan Token GitHub valid dan internet stabil.<br>Pesan sistem: ${error.message}</span>`;
+        if (confirm(`Copy kegiatan ini ke tanggal ${formatTglIndo(targetTgl)}?`)) {
+            try {
+                // Ambil data spesifik berdasarkan ID
+                const doc = await db.collection("reports_v13").doc(id).get();
+                if (doc.exists) {
+                    let newData = doc.data();
+                    
+                    // Ubah tanggal menjadi tanggal target dan perbarui timestamp
+                    newData.tgl = targetTgl;
+                    newData.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+                    
+                    // Simpan sebagai dokumen baru di database
+                    await db.collection("reports_v13").add(newData);
+                    
+                    // Tawarkan user apakah ingin langsung melompat ke tanggal tujuan
+                    if(confirm("✅ Berhasil dicopy! Apakah Anda ingin pindah melihat tanggal tersebut?")) {
+                        document.getElementById('tglLaporan').value = targetTgl;
+                        loadData(); // Reload list dengan tanggal yang baru
+                    }
+                }
+            } catch(e) {
+                console.error("Error copying data: ", e);
+                alert("❌ Gagal melakukan copy data.");
+            }
+        }
     }
-}
+    // --- AKHIR FUNGSI BARU ---
+
     // RUN ON STARTUP
     loadMasterData();
     addRowPaddock();
