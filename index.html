@@ -424,38 +424,35 @@
         });
     }
 
-    // DASHBOARD & FLOWCHARTasync function renderDashboard() {
-    const tgl = document.getElementById('tglDashboard').value;
-    const qPlan = await db.collection("reports_v13").where("tgl", "==", tgl).where("type", "==", "Planning").get();
-    const qHasil = await db.collection("reports_v13").where("tgl", "==", tgl).where("type", "==", "Hasil").get();
-    
-    // 1. Buat variabel mapData kosong
-    let mapData = {};
-    
-    // 2. Isi mapData dengan data Planning
-    qPlan.forEach(doc => {
-        const d = doc.data();
-        if(!mapData[d.kegiatan]) mapData[d.kegiatan] = { pLuas: 0, pHK: 0, hLuas: 0, hHK: 0 };
-        mapData[d.kegiatan].pLuas += d.paddocks.reduce((sum, p) => sum + parseFloat(p.luas), 0);
-        mapData[d.kegiatan].pHK += d.hk;
-    });
-    
-    // 3. Isi mapData dengan data Hasil
-    qHasil.forEach(doc => {
-        const d = doc.data();
-        if(!mapData[d.kegiatan]) mapData[d.kegiatan] = { pLuas: 0, pHK: 0, hLuas: 0, hHK: 0 };
-        mapData[d.kegiatan].hLuas += d.paddocks.reduce((sum, p) => sum + parseFloat(p.luas), 0);
-        mapData[d.kegiatan].hHK += d.hk;
-    });
+// DASHBOARD & FLOWCHART
+    async function renderDashboard() {
+        const tgl = document.getElementById('tglDashboard').value;
+        const qPlan = await db.collection("reports_v13").where("tgl", "==", tgl).where("type", "==", "Planning").get();
+        const qHasil = await db.collection("reports_v13").where("tgl", "==", tgl).where("type", "==", "Hasil").get();
+        
+        // 1. Buat variabel mapData kosong
+        let mapData = {};
+        
+        // 2. Isi mapData dengan data Planning
+        qPlan.forEach(doc => {
+            const d = doc.data();
+            if(!mapData[d.kegiatan]) mapData[d.kegiatan] = { pLuas: 0, pHK: 0, hLuas: 0, hHK: 0 };
+            mapData[d.kegiatan].pLuas += d.paddocks.reduce((sum, p) => sum + parseFloat(p.luas), 0);
+            mapData[d.kegiatan].pHK += d.hk;
+        });
+        
+        // 3. Isi mapData dengan data Hasil
+        qHasil.forEach(doc => {
+            const d = doc.data();
+            if(!mapData[d.kegiatan]) mapData[d.kegiatan] = { pLuas: 0, pHK: 0, hLuas: 0, hHK: 0 };
+            mapData[d.kegiatan].hLuas += d.paddocks.reduce((sum, p) => sum + parseFloat(p.luas), 0);
+            mapData[d.kegiatan].hHK += d.hk;
+        });
 
-    // 4. NAH, TARUH DI SINI! 
-    // Setelah mapData terisi penuh, baru kita simpan ke memori global untuk dibaca AI
-    lastDashboardData = mapData;
+        // 4. Simpan ke memori global untuk dibaca AI
+        lastDashboardData = mapData;
 
-    // ... (lanjutkan ke kode let html = ... yang sudah ada sebelumnya)
-    let html = `<div style="text-align:center; margin-bottom:10px; font-weight:bold;">Perbandingan Tanggal: ${formatTglIndo(tgl)}</div>`;
-    // ...
-}
+        let html = `<div style="text-align:center; margin-bottom:10px; font-weight:bold;">Perbandingan Tanggal: ${formatTglIndo(tgl)}</div>`;
         
         if(Object.keys(mapData).length === 0) {
             html += `<center>Tidak ada data di tanggal ini.</center>`;
@@ -469,7 +466,6 @@
             const hkPerHaPlan = d.pLuas > 0 ? (d.pHK / d.pLuas).toFixed(2) : 0;
             const hkPerHaHasil = d.hLuas > 0 ? (d.hHK / d.hLuas).toFixed(2) : 0;
 
-            // PERBAIKAN: Persentase perbandingan sekarang menggunakan HK/Ha
             const pctHKPerHa = hkPerHaPlan > 0 ? ((hkPerHaHasil / hkPerHaPlan) * 100).toFixed(0) : 0;
 
             // Logika Badge
