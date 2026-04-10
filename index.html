@@ -641,22 +641,31 @@ async function analisaDashboardAI() {
 
     // 2. MENGGUNAKAN API OPENROUTER
     // Ganti teks di bawah dengan API Key dari OpenRouter (sk-or-v1-...)
-    const API_KEY = "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"; 
-    const url = `https://openrouter.ai/api/v1/chat/completions`;
+    // 2. MENGGUNAKAN AI DARI GITHUB MODELS (GPT-4o-Mini)
+    // Masukkan token GitHub Anda yang berawalan ghp_ di bawah ini
+    const API_KEY = "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"; 
+    const url = `https://models.inference.ai.azure.com/chat/completions`;
 
     try {
         const response = await fetch(url, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${API_KEY}`,
-                'HTTP-Referer': window.location.href, 
-                'X-Title': 'Monitoring Upkeep App'
+                'Authorization': `Bearer ${API_KEY}`
             },
             body: JSON.stringify({
-                // Kita memanggil model Llama 3 8B (Gratis, Pintar, dan Cepat)
-                "model": "meta-llama/llama-3-8b-instruct:free", 
-                "messages": [{ "role": "user", "content": promptData }]
+                "model": "gpt-4o-mini", // Model AI cerdas dan cepat dari OpenAI via GitHub
+                "messages": [
+                    { 
+                        "role": "system", 
+                        "content": "Anda adalah Asisten Manajer Pertanian spesialis Upkeep & Manuring." 
+                    },
+                    { 
+                        "role": "user", 
+                        "content": promptData 
+                    }
+                ],
+                "temperature": 0.3
             })
         });
         
@@ -666,17 +675,16 @@ async function analisaDashboardAI() {
             throw new Error(result.error.message || "Gagal memuat AI.");
         }
 
-        // Jalur data respon dari OpenRouter sedikit berbeda dari Google
         const aiResponse = result.choices[0].message.content;
         
-        // Format output
+        // Format output teks dari AI ke HTML
         aiText.innerHTML = aiResponse
             .replace(/\n/g, '<br>')
             .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
             .replace(/\*(.*?)\*/g, '<i>$1</i>');
             
     } catch (error) {
-        aiText.innerHTML = `<span style="color:red;"><b>Gagal memanggil AI.</b><br>Pastikan API Key OpenRouter valid.<br>Pesan sistem: ${error.message}</span>`;
+        aiText.innerHTML = `<span style="color:red;"><b>Gagal memanggil AI.</b><br>Pastikan Token GitHub valid dan internet stabil.<br>Pesan sistem: ${error.message}</span>`;
     }
 }
     // RUN ON STARTUP
