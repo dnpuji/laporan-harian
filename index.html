@@ -128,9 +128,17 @@
         <label style="font-weight:bold; color:var(--primary);">Pilih Tanggal Dashboard:</label>
         <input type="date" id="tglDashboard" onchange="renderDashboard()" style="width:100%; margin-top:8px; font-weight:bold; color:var(--primary); border:1px solid #cbd5e1;">
     </div>
-    <button class="btn-main" style="margin-bottom:15px; background:#0ea5e9;" onclick="downloadDashboardJPG()">📸 DOWNLOAD DASHBOARD (JPG)</button>
+    
+    <button class="btn-main" style="margin-bottom:10px; background:#0ea5e9;" onclick="downloadDashboardJPG()">📸 DOWNLOAD DASHBOARD (JPG)</button>
+    <button class="btn-main" style="margin-bottom:15px; background:#8b5cf6;" onclick="analisaDashboardAI()">🤖 MINTA ANALISA AI</button>
+
+    <div id="aiAnalysisResult" style="display:none; background: #f8fafc; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #8b5cf6;">
+        <h3 style="margin-top:0; color:#6d28d9; border-bottom: 2px solid #ddd; padding-bottom: 5px;">📊 Hasil Analisa AI</h3>
+        <div id="aiText" style="line-height: 1.6;">Sedang menganalisa...</div>
+    </div>
+
     <div id="dashboardArea" style="background: white; padding: 10px; border-radius: 10px;">
-        </div>
+    </div>
 </div>
 
 <div id="viewRekap" style="display:none;">
@@ -186,6 +194,7 @@
     const db = firebase.firestore();
     
     let currentTab = "Planning";
+    let lastDashboardData = {};
     let dataHistoryGlobal = [];
     let masterKegiatan = [];
     let masterBahan = [];
@@ -415,27 +424,38 @@
         });
     }
 
-    // DASHBOARD & FLOWCHART
-    async function renderDashboard() {
-        const tgl = document.getElementById('tglDashboard').value;
-        const qPlan = await db.collection("reports_v13").where("tgl", "==", tgl).where("type", "==", "Planning").get();
-        const qHasil = await db.collection("reports_v13").where("tgl", "==", tgl).where("type", "==", "Hasil").get();
-        
-        let mapData = {};
-        qPlan.forEach(doc => {
-            const d = doc.data();
-            if(!mapData[d.kegiatan]) mapData[d.kegiatan] = { pLuas: 0, pHK: 0, hLuas: 0, hHK: 0 };
-            mapData[d.kegiatan].pLuas += d.paddocks.reduce((sum, p) => sum + parseFloat(p.luas), 0);
-            mapData[d.kegiatan].pHK += d.hk;
-        });
-        qHasil.forEach(doc => {
-            const d = doc.data();
-            if(!mapData[d.kegiatan]) mapData[d.kegiatan] = { pLuas: 0, pHK: 0, hLuas: 0, hHK: 0 };
-            mapData[d.kegiatan].hLuas += d.paddocks.reduce((sum, p) => sum + parseFloat(p.luas), 0);
-            mapData[d.kegiatan].hHK += d.hk;
-        });
+    // DASHBOARD & FLOWCHARTasync function renderDashboard() {
+    const tgl = document.getElementById('tglDashboard').value;
+    const qPlan = await db.collection("reports_v13").where("tgl", "==", tgl).where("type", "==", "Planning").get();
+    const qHasil = await db.collection("reports_v13").where("tgl", "==", tgl).where("type", "==", "Hasil").get();
+    
+    // 1. Buat variabel mapData kosong
+    let mapData = {};
+    
+    // 2. Isi mapData dengan data Planning
+    qPlan.forEach(doc => {
+        const d = doc.data();
+        if(!mapData[d.kegiatan]) mapData[d.kegiatan] = { pLuas: 0, pHK: 0, hLuas: 0, hHK: 0 };
+        mapData[d.kegiatan].pLuas += d.paddocks.reduce((sum, p) => sum + parseFloat(p.luas), 0);
+        mapData[d.kegiatan].pHK += d.hk;
+    });
+    
+    // 3. Isi mapData dengan data Hasil
+    qHasil.forEach(doc => {
+        const d = doc.data();
+        if(!mapData[d.kegiatan]) mapData[d.kegiatan] = { pLuas: 0, pHK: 0, hLuas: 0, hHK: 0 };
+        mapData[d.kegiatan].hLuas += d.paddocks.reduce((sum, p) => sum + parseFloat(p.luas), 0);
+        mapData[d.kegiatan].hHK += d.hk;
+    });
 
-        let html = `<div style="text-align:center; margin-bottom:10px; font-weight:bold;">Perbandingan Tanggal: ${formatTglIndo(tgl)}</div>`;
+    // 4. NAH, TARUH DI SINI! 
+    // Setelah mapData terisi penuh, baru kita simpan ke memori global untuk dibaca AI
+    lastDashboardData = mapData;
+
+    // ... (lanjutkan ke kode let html = ... yang sudah ada sebelumnya)
+    let html = `<div style="text-align:center; margin-bottom:10px; font-weight:bold;">Perbandingan Tanggal: ${formatTglIndo(tgl)}</div>`;
+    // ...
+}
         
         if(Object.keys(mapData).length === 0) {
             html += `<center>Tidak ada data di tanggal ini.</center>`;
@@ -585,7 +605,77 @@
             const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = `Upkeep_${tgl}.csv`; a.click();
         });
     }
+async function analisaDashboardAI() {
+    const tgl = document.getElementById('tglDashboard').value;
+    const aiContainer = document.getElementById('aiAnalysisResult');
+    const aiText = document.getElementById('aiText');
+    
+    // Tampilkan kotak loading
+    aiContainer.style.display = 'block';
+    aiText.innerHTML = '<i>🤖 Sedang mengevaluasi data target luasan dan efisiensi HK... Mohon tunggu sebentar.</i>';
 
+    // Cek apakah ada data
+    if (Object.keys(lastDashboardData).length === 0) {
+        aiText.innerHTML = "Tidak ada data operasional di tanggal ini untuk dianalisa.";
+        return;
+    }
+
+    // 1. Susun Prompt (Instruksi) untuk AI
+    let promptData = `Anda adalah Asisten Manajer Pertanian spesialis Upkeep & Manuring. Analisa data harian tanggal ${tgl} berikut (Perbandingan Planning vs Aktual):\n\n`;
+    
+    for (let keg in lastDashboardData) {
+        const d = lastDashboardData[keg];
+        const pctLuas = d.pLuas > 0 ? ((d.hLuas / d.pLuas) * 100).toFixed(0) : 0;
+        const hkPerHaPlan = d.pLuas > 0 ? (d.pHK / d.pLuas).toFixed(2) : 0;
+        const hkPerHaHasil = d.hLuas > 0 ? (d.hHK / d.hLuas).toFixed(2) : 0;
+        
+        // Hitung selisih luasan agar AI lebih paham konteks defisit/surplus
+        const selisihLuas = (d.hLuas - d.pLuas).toFixed(2);
+        const statusLuas = selisihLuas >= 0 ? `(+${selisihLuas} Ha Surplus)` : `(${selisihLuas} Ha Defisit)`;
+
+        promptData += `- Kegiatan: ${keg}\n`;
+        promptData += `  * Target Luasan: Plan ${d.pLuas.toFixed(2)} Ha vs Aktual ${d.hLuas.toFixed(2)} Ha. (Pencapaian: ${pctLuas}% | ${statusLuas})\n`;
+        promptData += `  * Efisiensi HK: Plan ${d.pHK} HK (Rasio: ${hkPerHaPlan} HK/Ha) vs Aktual ${d.hHK} HK (Rasio: ${hkPerHaHasil} HK/Ha)\n\n`;
+    }
+    
+    promptData += `Tolong berikan analisa terstruktur dengan format berikut:\n`;
+    promptData += `1. **Evaluasi Target Luasan:** Sebutkan kegiatan yang berhasil capai target dan soroti tajam kegiatan yang *underperform* (defisit luasan). Sebutkan angka defisitnya.\n`;
+    promptData += `2. **Evaluasi Efisiensi HK:** Analisa rasio HK/Ha. Soroti jika ada pemborosan (HK tinggi tapi luasan sedikit) atau jika sangat efisien.\n`;
+    promptData += `3. **Rekomendasi Operasional:** Berikan 2-3 saran tegas untuk pengawas lapangan/mandor besok (misal: perlu cek breakdown traktor, evaluasi kinerja orang, atau realokasi HK).\n`;
+    promptData += `Gunakan bahasa Indonesia yang profesional, tegas, dan langsung ke intinya. Gunakan format bold untuk memperjelas.`;
+
+    // 2. Panggil API Gemini
+    // Jangan lupa masukkan API Key Anda di sini
+    const API_KEY = "AIzaSyDaZC3guvX1S8tUUHarl3ojEuT85zrlPCM"; 
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: promptData }] }]
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.error) {
+            throw new Error(result.error.message);
+        }
+
+        const aiResponse = result.candidates[0].content.parts[0].text;
+        
+        // Format output markdown (*) menjadi HTML (<b> dan <br>)
+        aiText.innerHTML = aiResponse
+            .replace(/\n/g, '<br>')
+            .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+            .replace(/\*(.*?)\*/g, '<i>$1</i>');
+            
+    } catch (error) {
+        aiText.innerHTML = `<span style="color:red;"><b>Gagal memanggil AI.</b><br>Pastikan API Key valid dan internet stabil.<br>Error: ${error.message}</span>`;
+    }
+}
     // RUN ON STARTUP
     loadMasterData();
     addRowPaddock();
