@@ -104,49 +104,48 @@
 
     // --- DINAMIS BAHAN ---
     function addRowBahan() {
-        const div = document.createElement('div');
-        div.className = 'input-group bahan-item';
-        div.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <label>🧪 Kebutuhan Bahan</label>
-                <button onclick="this.parentElement.parentElement.remove(); kalkulasiOtomatis();" class="delete-btn">✕ HAPUS</button>
-            </div>
-            <input type="text" class="b-name" placeholder="Nama Pupuk/Herbisida" style="margin-bottom:6px;">
-            <div class="row-grid-3">
-                <input type="number" class="b-total" placeholder="Total Bahan" step="0.01" oninput="kalkulasiOtomatis()">
-                <select class="b-satuan">
-                    <option value="Kg">Kg</option>
-                    <option value="Liter">Liter</option>
-                    <option value="Gram">Gram</option>
-                    <option value="Bag">Bag</option>
-                </select>
-                <input type="text" class="b-dosis" placeholder="Dosis/Ha" readonly style="background:#e2e8f0; font-weight:bold; font-size:12px;">
-            </div>`;
-        document.getElementById('bahanContainer').appendChild(div);
-    }
+    const div = document.createElement('div');
+    div.className = 'input-group bahan-item';
+    div.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <label>🧪 Dosis Bahan</label>
+            <button onclick="this.parentElement.parentElement.remove(); kalkulasiOtomatis();" class="delete-btn">✕ HAPUS</button>
+        </div>
+        <input type="text" class="b-name" placeholder="Nama Pupuk/Herbisida" style="margin-bottom:6px;">
+        <div class="row-grid-3">
+            <input type="number" class="b-dosis" placeholder="Dosis/Ha" step="0.01" oninput="kalkulasiOtomatis()">
+            <select class="b-satuan">
+                <option value="Kg">Kg/Ha</option>
+                <option value="Liter">Ltr/Ha</option>
+                <option value="Bag">Bag/Ha</option>
+            </select>
+            <input type="text" class="b-total" placeholder="Total" readonly style="background:#e2e8f0; font-weight:bold; font-size:12px;">
+        </div>`;
+    document.getElementById('bahanContainer').appendChild(div);
+}
 
     // --- KALKULASI DOSIS & LUAS ---
     function kalkulasiOtomatis() {
-        let totalLuas = 0;
-        document.querySelectorAll('.p-luas').forEach(el => {
-            totalLuas += parseFloat(el.value) || 0;
-        });
-        
-        document.getElementById('footerTotal').innerText = `TOTAL LUAS: ${totalLuas.toFixed(2)} Ha`;
+    let totalLuas = 0;
+    document.querySelectorAll('.p-luas').forEach(el => {
+        totalLuas += parseFloat(el.value) || 0;
+    });
+    
+    document.getElementById('footerTotal').innerText = `TOTAL LUAS: ${totalLuas.toFixed(2)} Ha`;
 
-        document.querySelectorAll('.bahan-item').forEach(item => {
-            const totalBahan = parseFloat(item.querySelector('.b-total').value) || 0;
-            const satuan = item.querySelector('.b-satuan').value;
-            const dosisInput = item.querySelector('.b-dosis');
-            
-            if (totalLuas > 0 && totalBahan > 0) {
-                const dosis = (totalBahan / totalLuas).toFixed(2);
-                dosisInput.value = `${dosis} ${satuan}/Ha`;
-            } else {
-                dosisInput.value = "";
-            }
-        });
-    }
+    document.querySelectorAll('.bahan-item').forEach(item => {
+        const dosis = parseFloat(item.querySelector('.b-dosis').value) || 0;
+        const satuan = item.querySelector('.b-satuan').value;
+        const totalInput = item.querySelector('.b-total');
+        
+        if (totalLuas > 0 && dosis > 0) {
+            const totalKebutuhan = (totalLuas * dosis).toFixed(2);
+            totalInput.value = `= ${totalKebutuhan} ${satuan.replace('/Ha','')}`;
+        } else {
+            totalInput.value = "";
+        }
+    });
+}
 
     // --- FUNGSI KIRIM KE PIPEDREAM ---
     async function simpanData() {
