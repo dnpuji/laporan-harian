@@ -428,31 +428,56 @@ async function editMasterKegiatan(id, oldName, oldStd) {
     });
 }
     async function simpanData(isUpdate) {
-        const tgl = document.getElementById('tglLaporan').value;
-        const paddocks = Array.from(document.querySelectorAll('.paddock-item')).map(el => ({
-            name: el.querySelector('.p-name').value, 
-            luas: parseFloat(el.querySelector('.p-luas').value) || 0
-        })).filter(p => p.name !== "");
-        
-        const bahans = Array.from(document.querySelectorAll('.bahan-item')).map(el => ({
-            name: el.querySelector('.b-name').value,
-            dosis: parseFloat(el.querySelector('.b-dosis').value) || 0,
-            satuan: el.querySelector('.b-satuan').value,
-            total: el.querySelector('.b-total').value
-        })).filter(b => b.name !== "");
+    const tgl = document.getElementById('tglLaporan').value;
+    const PIPEDREAM_URL = "https://eoxbdumhvaxvbu9.m.pipedream.net"; // Masukkan URL Pipedream Anda
 
-        const payload = {
-            tgl, type: currentTab, kegiatan: document.getElementById('kegiatan').value,
-            paddocks, bahans, hk: parseInt(document.getElementById('hk').value) || 0,
-            unit: document.getElementById('unit').value, jln: parseInt(document.getElementById('jln').value) || 0,
-            rsk: parseInt(document.getElementById('rsk').value) || 0, std: parseInt(document.getElementById('std').value) || 0,
-            ket: document.getElementById('ket').value, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        if(!payload.kegiatan) return alert("Pilih Kegiatan!");
-        if(isUpdate) await db.collection("reports_v13").doc(document.getElementById('editId').value).update(payload);
-        else await db.collection("reports_v13").add(payload);
-        clearForm();
+    // Ambil data Paddock
+    const paddocks = Array.from(document.querySelectorAll('.paddock-item')).map(el => ({
+        name: el.querySelector('.p-name').value, 
+        luas: parseFloat(el.querySelector('.p-luas').value) || 0
+    })).filter(p => p.name !== "");
+    
+    // Ambil data Bahan
+    const bahans = Array.from(document.querySelectorAll('.bahan-item')).map(el => ({
+        name: el.querySelector('.b-name').value,
+        total: el.querySelector('.b-total').value
+    })).filter(b => b.name !== "");
+
+    // Gabungkan Status Alat untuk kemudahan di Lark
+    const statusAlat = `Rdy:${document.getElementById('jln').value} | Bdn:${document.getElementById('rsk').value} | Sby:${document.getElementById('std').value}`;
+
+    const payload = {
+        tgl,
+        type: currentTab,
+        kegiatan: document.getElementById('kegiatan').value,
+        paddocks: JSON.stringify(paddocks), // Kirim sebagai string agar masuk ke satu kolom
+        bahans: JSON.stringify(bahans),
+        hk: parseInt(document.getElementById('hk').value) || 0,
+        unit: document.getElementById('unit').value,
+        status_alat: statusAlat,
+        ket: document.getElementById('ket').value
+    };
+
+    if(!payload.kegiatan) return alert("Pilih Kegiatan!");
+
+    try {
+        const response = await fetch(PIPEDREAM_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            alert("✅ Data Berhasil Terkirim ke Lark!");
+            clearForm();
+        } else {
+            alert("❌ Gagal mengirim ke Lark.");
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert("⚠️ Terjadi kesalahan koneksi.");
     }
+}
 
     function clearForm() {
         document.getElementById('editId').value = ""; document.getElementById('kegiatan').value = "";
