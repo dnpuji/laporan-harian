@@ -431,27 +431,29 @@ async function editMasterKegiatan(id, oldName, oldStd) {
     const tgl = document.getElementById('tglLaporan').value;
     const PIPEDREAM_URL = "https://eoxbdumhvaxvbu9.m.pipedream.net"; 
 
-    // Ambil data Paddock & Bahan
-    const paddocks = Array.from(document.querySelectorAll('.paddock-item')).map(el => ({
-        name: el.querySelector('.p-name').value, 
-        luas: parseFloat(el.querySelector('.p-luas').value) || 0
-    })).filter(p => p.name !== "");
+    // 1. Ubah Paddock & Luas menjadi teks: "Pdk A (2.5 Ha), Pdk B (1.2 Ha)"
+    const paddocksText = Array.from(document.querySelectorAll('.paddock-item')).map(el => {
+        const name = el.querySelector('.p-name').value;
+        const luas = el.querySelector('.p-luas').value;
+        return name ? `${name} (${luas} Ha)` : null;
+    }).filter(p => p !== null).join(", ");
     
-    const bahans = Array.from(document.querySelectorAll('.bahan-item')).map(el => ({
-        name: el.querySelector('.b-name').value,
-        total: el.querySelector('.b-total').value
-    })).filter(b => b.name !== "");
+    // 2. Ubah Bahan & Dosis menjadi teks: "Urea (50 Kg), ZA (25 Kg)"
+    const bahansText = Array.from(document.querySelectorAll('.bahan-item')).map(el => {
+        const name = el.querySelector('.b-name').value;
+        const dosis = el.querySelector('.b-dosis').value;
+        const satuan = el.querySelector('.b-satuan').value;
+        return name ? `${name} (${dosis} ${satuan})` : null;
+    }).filter(b => b !== null).join(", ");
 
-    // PASTIKAN PAYLOAD DIBAWAH INI TERPISAH
     const payload = {
         tgl: tgl,
         type: currentTab,
         kegiatan: document.getElementById('kegiatan').value,
-        paddocks: JSON.stringify(paddocks),
-        bahans: JSON.stringify(bahans),
+        paddock_list: paddocksText, // Sekarang sudah berupa teks rapi
+        bahan_list: bahansText,     // Sekarang sudah berupa teks rapi
         hk: parseInt(document.getElementById('hk').value) || 0,
         unit: document.getElementById('unit').value,
-        // Status Unit harus dipisah begini:
         rdy: parseInt(document.getElementById('jln').value) || 0,
         bdn: parseInt(document.getElementById('rsk').value) || 0,
         sby: parseInt(document.getElementById('std').value) || 0,
